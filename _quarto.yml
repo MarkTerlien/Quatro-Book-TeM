@@ -1,0 +1,54 @@
+project:
+  type: book
+
+book:
+  title: "Template"
+  lang: nl
+  author: "John Ypma"
+  date: "2022-11-15"
+  favicon: has-logo-donker.png
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+  page-navigation: true
+  #
+  # als je geen menubalk wil kun je de volgende 
+  # regels verwijderen of op commentaar zetten
+  # tot ......
+  navbar:
+    background: primary
+    search: true
+    left:
+      - text: "Blackboard"
+        file: https://blackboard.has.nl/ultra/
+      - text: "Home"
+        file: index.qmd
+      - text: "Introduction"
+        file: intro.qmd
+      - text: "Summary"
+        file: summary.qmd
+      - text: "References"
+        file: references.qmd
+  # ... hier
+  body-footer: |
+    &copy; HAS green academy
+      
+bibliography: references.bib
+
+format:
+  html:
+    theme: 
+      - cosmo
+# verander onderstaan regel naar het gewenste scss 
+# bestand voor een andere opmaak
+# je kunt kiezen uit:
+#   has-default.scss (donker groen)
+#   has-light.scss (licht groen) 
+      - has-default.scss
+  pdf:
+    documentclass: scrreprt
+
+
+
