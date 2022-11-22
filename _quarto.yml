@@ -45,7 +45,10 @@ format:
 # bestand voor een andere opmaak
 # je kunt kiezen uit:
 #   has-default.scss (donker groen)
-#   has-light.scss (licht groen) 
+#   has-light.scss (licht groen)
+#   has-blauw.scss (Blauw)
+#   has-rood.scss (Rood)
+#   has-paars.scss (Paars/Roze) 
       - has-default.scss
   pdf:
     documentclass: scrreprt
