@@ -59,6 +59,8 @@ format:
 #   has-rood.scss (Rood)
 #   has-paars.scss (Paars/Roze) 
       - has-default.scss
+    css:
+      - has-algemeen.css
 
 
 
