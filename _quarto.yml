@@ -33,7 +33,7 @@ book:
         file: references.qmd
   # ... hier
   
-  body-footer: |
+  page-footer: |
     &copy; HAS green academy
       
 bibliography: references.bib
