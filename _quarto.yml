@@ -19,10 +19,17 @@ book:
   # tot ......
   navbar:
     background: primary
+  #
+  # Dit is het logo dat in de menubalk links staat.
+  # Als je het thema verandert naar de lichtgroene
+  # kleur kun je hieronder de naam van het logo
+  # veranderen in HAS-logo-donker.png
+  # 
+    logo: HAS-logo-licht.png
     search: true
     left:
       - text: "Blackboard"
-        file: https://blackboard.has.nl/ultra/
+        url: https://blackboard.has.nl/ultra/
       - text: "Home"
         file: index.qmd
       - text: "Introduction"
@@ -32,13 +39,15 @@ book:
       - text: "References"
         file: references.qmd
   # ... hier
-  body-footer: |
+  page-footer: |
     &copy; HAS green academy
       
 bibliography: references.bib
 
 format:
   html:
+    link-external-icon: true
+    link-external-newwindow: true
     theme: 
       - cosmo
 # verander onderstaan regel naar het gewenste scss 
@@ -50,8 +59,7 @@ format:
 #   has-rood.scss (Rood)
 #   has-paars.scss (Paars/Roze) 
       - has-default.scss
-  pdf:
-    documentclass: scrreprt
+
 
 
 

@@ -119,24 +119,5 @@ body {
 }
 
 #quarto-sidebar:before {
-    content: url(HAS-logo-licht.png);
+    content: url(plaatje-sidebar.png);
 }
-
-// #quarto-document-content {
-//     min-height: calc(100vh - 200px);
-// }
-
-main > p:last-of-type {
-  margin-top: 20px;
-  text-align: center;
-  font-size: small;
-}
-
-#copyright-footer {
-    position: relative;
-    bottom: 20px;
-    text-align: center;
-    font-size: small;
-}
-
-
