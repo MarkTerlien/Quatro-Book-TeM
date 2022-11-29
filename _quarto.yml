@@ -3,7 +3,7 @@ project:
 
 book:
   title: "Template"
-  lang: nl
+  language: nl
   author: "John Ypma"
   date: "2022-11-15"
   favicon: has-logo-donker.png

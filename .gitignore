@@ -1,1 +1,5 @@
 /.quarto/
+_book/
+.Rproj.user
+Template-HAS-Quatro-Book.Rproj
+.Rhistory
