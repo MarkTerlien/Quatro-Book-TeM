@@ -5,7 +5,8 @@ book:
   title: "Template"
   language: nl
   author: "John Ypma"
-  date: "2022-11-15"
+  date: today
+  date-format: "D MMMM YYYY"
   favicon: has-logo-donker.png
   chapters:
     - index.qmd
