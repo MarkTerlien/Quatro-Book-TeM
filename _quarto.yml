@@ -13,6 +13,8 @@ book:
     - intro.qmd
     - summary.qmd
     - references.qmd
+    - Introductie_Python.ipynb
+    - Introductie_Bestandsbeheer_met_Python.ipynb
   page-navigation: true
   #
   # als je geen menubalk wil kun je de volgende 
@@ -39,6 +41,10 @@ book:
         file: summary.qmd
       - text: "References"
         file: references.qmd
+      - text: "Introductie Python"
+        file: Introductie_Python.ipynb
+      - text: "Bestandsbeheer met Python"
+        file: Introductie_Bestandsbeheer_met_Python.ipynb
   # ... hier
   page-footer: |
     &copy; HAS green academy

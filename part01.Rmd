@@ -1,0 +1,43 @@
+# Aan de slag 
+
+## Importeren van libraries {#idiZ9dU20aF}
+
+Om de functionaliteit van Python uit te breiden kun je libraries (ook wel modules) installeren. Veelgebruikte libraries voor data verwerking van geografische gegevens zijn *gdal* en *numpy*. Je kunt deze libraries importeren met de functie `import`. Met de module *math* kun je bijvoorbeeld wiskundige functies importeren.
+
+```{python, results = "hold", class.source="pythoncode"}
+import math
+print(type(math))
+```
+
+Om te zien welke functies deze module bevat kunnen we de volgende code gebruiken.
+
+```{python, results = "hold"}
+print(dir(math))
+```
+
+Je ziet dat je, door deze module te importeren, er functies bij krijgt om bijvoorbeeld de *sinus*, *cosin*, *pi*, de *wortel* en *logaritme* te berekenen. Dus, om te bereken wat de wortel is van 144 gebruik je:
+
+```{python, results = "hold"}
+math.sqrt(144)
+```
+
+Heb je slechts één functie uit een module nodig, of is er een specifieke functie die je heel vaak in je script nodig hebt, dan kun je die ook apart importeren.
+
+```{python, results = "hold"}
+from math import sqrt
+```
+
+Het voordeel is dat de naam van de module niet meer nodig is bij het gebruik van deze functie. Laten we nu eens de wortel van 20736 uitrekenen.
+
+```{python, results = "hold"}
+sqrt(20736)
+```
+
+## Commentaar in Python {#idyDjFdPNdA}
+
+Een goede programmeur voorziet zijn code van commentaar. Commentaar geeft toelichting op de code zodat deze ook van andere programmeurs te begrijpen is. In Python moet een commentaarregel voorafgegaan worden door een `#`.
+
+```{python, results = "hold"}
+print('Deze regel wordt geprint omdat dit geen commentaarregel is')
+# print('Deze regel wordt niet geprint omdat dit een commentaarregel is')
+```
