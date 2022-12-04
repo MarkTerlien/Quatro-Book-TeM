@@ -1,0 +1,840 @@
+# Toepassingen
+
+## NDVI waarden ophalen {#idq96WTi5LI}
+
+Je hebt inmiddels ontdekt dat je veel kunt met Python, maar dat het er met alle mogelijkheden niet altijd makkelijker op wordt om te achterhalen hoe je iets het beste kunt doen. Het is zeker ook niet te doen om alle syntax, regels en mogelijkheden uit je hoofd te leren. Dat is dan ook niet de bedoeling. Dit document geeft je een aantal handvatten, en verder is Google, DuckDuck, of wat je favoriete zoekmachine ook is, je vriend(in).
+
+De beste manier om te leren scripten is verder het te gebruiken voor concrete vraagstukken. Jullie opdracht om NDVI waarden van een aantal satellietbeelden in te lezen voor een specifieke locatie is daar een mooi voorbeeld van. Op zich te doen in QGIS, maar je kunt je voorstellen dat het het waard is om wat tijd te investeren in het schrijven van een script wat dit automatiseert. We gaan hier verder op die opdracht.
+
+We moeten hiervoor wel weer de module met functies importeren die Mark voor jullie heeft gemaakt. Ter herinnering, om de module `raster_functions` te kunnen gebruiken, moet deze eerst gecompileerd worden. Dit gaat als volgt: (1) Open het script "raster\_functions.py" in Visual Studio Code, (2) Run dit script met Crtl+F5. Hierna kun je de module importeren zoals elke andere module. Zoals je ziet importeer ik de module met de alias *rf*.
+
+```{python, results = "hold", eval=F}
+# Import the os en raster_functions libraries
+import os
+import pandas as pd
+import raster_functions as rf
+```
+
+```{exercise}
+Bij de opdracht is jullie gevraagd om de datum en NDVI waarden van een aantal satellietbeelden in te lezen en naar het scherm uit te printen. Die waarden kun je vervolgens niet meer gebruiken. Pas het script zo aan dat de datum en NDVI waarden ieder naar een lijst worden weggeschreven. Verder heb je nu twee locaties waarvoor je de waarden moet inlezen. Deze staan in de csv file [inleeslocaties.csv](Data/inleeslocaties.csv). Zie hieronder voor aanwijzingen.
+```
+
+Hieronder heb ik een aantal stappen ingevuld. Misschien heb jij het op een andere manier gedaan. Prima, zolang je maar zorgt dat je op het einde van het script twee lijsten hebt. Een met de datums van de satellietbeelden, en een ander met de NDVI voor de opgegeven locaties.
+
+```{python, eval=F, echo=T}
+# Lees file met locaties in
+locs = pd.read_csv("path_to_file")
+
+# Ga naar locatie met bestanden
+
+
+# Create empty lists waarin de locatie, datum en ndvi waarden worden bewaard.
+datum = []
+ndvi = []
+locatie = []
+
+# Itereer over de rasterbestanden van band 4'
+for file_name in os.listdir() :
+    
+    # In deze loop ga je alle code hieronder voor elke locatie uitvoeren
+    for i in range(0, locs.shape[0]) :
+        
+        # Extraheer de x en y locatie voor deze loop, en de locatie ID uit loc
+        # dit doe je door eerst de kolom te selecteren met locs['kolomnaam']
+        # en dan de ide rij met iloc[i]. Deze kun je achter elkaar plakken 
+        # locs['kolomnaam'].iloc[i]
+        x = 
+        y = 
+        bsp = 
+        
+        if 'B04' in file_name :
+            
+            # Zoek voor dezelfde datum en tijd het rasterbestand van band 8
+
+            # Bereken voor elke datum en tijd de NDVI 
+            # Voeg datum toe aan 'locatie' lijst
+
+      
+            # Check coordinate system en projecteer indien nodig
+
+            
+            # Extraheer de NDVI waarde voor de gekozen locatie
+            # Voeg deze toe aan de lijst 'ndvi'
+
+                
+            # Voeg locatie toe aan lijst 'locatie' 
+            
+
+```
+
+<!--# Check in regel for loop op extentie *.tif -->
+<!--# functions from rf module ran without the rf (regel 103, 108, 110,114. Check why this doesn't work,
+importing with alias. It does with using other rmarkdown templates-->
+
+```{python, eval=T, echo=F, warning=F, error=F, message=F}
+# Lees file met locaties in
+locs = pd.read_csv("Data/inleeslocaties.csv")
+
+# Ga naar locatie met bestanden
+os.chdir("satellietbeelden")
+
+# Create empty lists waarin de datum en ndvi waarden worden bewaard.
+datum = []
+ndvi = []
+locatie = []
+
+# Itereer over de data
+aantal_locaties = locs.shape[0]
+numrows = range(0, aantal_locaties)
+file_name = os.listdir()
+
+# Itereer over de rasterbestanden van band 4'
+for file_name in os.listdir() :
+    # In deze loop ga je alle code hieronder voor elke locatie uitvoeren
+    if os.path.splitext(file_name)[1] == '.tif' :
+      for i in numrows :
+          x = locs['x'].iloc[i]
+          y = locs['y'].iloc[i]
+          bsp = locs['locatie'].iloc[i]
+          if 'B04' in file_name :
+              
+              # Zoek voor dezelfde datum en tijd het rasterbestand van band 8
+              file_name_B04 = file_name
+              file_name_B08 = file_name.replace('B04', 'B08')
+              # Bereken voor elke datum en tijd de NDVI 
+              file_name_NDVI = calculate_ndvi(file_name_B04, file_name_B08)
+              datum.append(file_name_NDVI[:-16][15:])
+        
+              # Check coordinate system and transform when needed
+              target_crs = 32631
+              coordinate_system = get_coordinate_system(file_name_NDVI)
+              if int(coordinate_system) == 28992:
+                  file_name_NDVI = transform_raster_image(file_name_NDVI, target_crs)
+              
+              # Extraheer de NDVI waarde voor de gekozen locatie
+              # Voeg deze toe aan de lijst 'ndvi'
+              ndvi.append(get_value_from_raster(file_name_NDVI, x, y))
+                  
+              # add locatie to locatie
+              locatie.append(bsp)
+              
+# Clean up
+for file_name in os.listdir() :
+  if 'NDVI' in file_name:
+    os.remove(file_name)
+    
+# Verander working directory terug
+os.chdir('..')
+```
+
+Als het goed is heb je in bovenstaande script eerste twee lege lijsten worden gecreëerd. Dit kan, zoals je ziet, simpelweg met de twee rechten haken. Vervolgens wordt welke keer als je door de loop gaat de datum van het volgende satelliet beeld toegevoegd aan de lijst *datum* en de NDVI aan de lijst *ndvi*. Na het runnen van het script kun je controleren of dit gelukt is door de waarden uit beide lijsten te printen. Dit zou er als volgt moeten uitzien.
+
+```{python, results = "hold"}
+print("NDVI: {}".format(ndvi))
+```
+
+```{python, results = "hold"}
+print("DATUM: {}".format(datum))
+```
+
+```{python, results = "hold"}
+print("locatie: {}".format(locatie))
+```
+
+Leuk, zo'n rij met getallen, maar niet heel handig als je deze getallen wat beter wilt bekijken. Je kunt bijvoorbeeld zien dat een van de satelliet beelden geen waarde heeft voor de gekozen locatie. Maar op welke dag was dat?
+
+```{exercise}
+Voeg de drie lijsten samenvoegen tot een dataframe.
+```
+
+```{python, eval=T, echo=F}
+df_ndvi = pd.DataFrame(data = zip(locatie, datum, ndvi), columns = ['locatie', 'datum', 'ndvi'])
+```
+
+Is je dit gelukt, dan kun je in een oogopslag zien dat het satellietbeeld van 13 mei 2019 geen waarde had voor de gekozen locaties.
+
+Je kunt deze tabel nu ook makkelijk exporteren om verder te gebruiken in bijvoorbeeld Jamovi of Excel. Dit doe je met de functie `to_csv` of `to_excel`. Ook dit zijn weer methoden voor Pandas data objecten, inclusief dataframes.
+
+Om data naar een Excel bestand weg te schrijven moet je wel eerst een nieuwe module installeren; `openpyxl`. Dit doe je op dezelfde manier als je Pandas hebt geïnstalleerd (paragraaf \@ref(idYonrFYn1h)).
+
+```{exercise}
+Exporteer de resulterende tabel als csv en als Excel file
+```
+
+```{python, warning=F, echo=F, eval=T}
+# Maak een folder voor de uitkomsten
+if not os.path.exists("resultaten"):
+  os.mkdir("resultaten")
+
+# Exporteer de tabel als een csv bestand
+df_ndvi.to_csv("resultaten/nvid_tijdseries.csv")
+
+# Exporteer de tabel als een Excel bestand
+df_ndvi.to_excel("resultaten/nvid_tijdseries.xlsx", sheet_name="ndvi")
+```
+
+## Fosfaat berekenen {#fosfaatberekenen}
+
+We gaan nu aan de slag met jullie gegevens. In het Excelbestand [DDD\_meetgegevens.xlsx](Data/DDD_meetgegevens.xlsx) staan de locatiegegevens en labresultaten. Het bestand heeft drie sheets, die we alle drie als aparte dataframes gaan inlezen.
+
+Het bestand is een aangepaste versie van het bestand wat jullie eerder van Jeannette hebben gehad, zodat deze zonder al te veel moeite in Pandas ingelezen kan worden. Dit is overigens iets om altijd op te letten: Sla je data zo op, dat het makkelijk in elk willekeurig programma te openen is. Val niet in de valkuil je tabellen mooi op te maken. Dat doe je pas als je een tabel daadwerkelijk in een rapport wilt zetten, maar is zeker niet hoe je je data opslaat.
+
+In de sheet *locaties* staat een extra titel in de eerste rij, dus deze slaan we over met het argument `skiprows`. Zoals Mark al genoemd heeft, in Python begin je met 0 te tellen, vandaar dat je de 0de rij wilt weglaten. Verder heeft `skiprows` als argument een lijst nodig. Vandaar dat de 0 tussen vierkante haakjes staat (zo maak je een lijst).
+
+```{python, warning=F}
+locaties = pd.read_excel("Data/DDD_meetgegevens.xlsx", sheet_name = "Locatie", skiprows = [0])
+print(locaties.head(4))
+```
+
+De sheet *Labresultaten* bevat de belangrijkste uitkomsten, namelijk het percentage droge stof, het percentage organisch stofgehalte, de pH en de gemiddelde PAL (extinctie).
+
+```{exercise}
+importeer de tabel met labresultaten.
+```
+
+```{python, warning=F, echo=F}
+labdata = pd.read_excel("Data/DDD_meetgegevens.xlsx", sheet_name = "Labresultaten")
+```
+
+Met de gemiddelde PAL (extinctie) kunnen jullie de concentratie fosfaat (in $mg~P_2O_5/liter$) bepalen. Dat kan door in onderstaande grafiek bij elke in het lab gemeten PAL waarde de bijbehorende fosfaat concentratie op te zoeken.
+
+![IJklijn om de fosfaat te bepalen aan de hand van de extinctie (PAL)](images/eb3bf11b2095c979c7ea2828779dbf74.png){width="500"}
+
+Het gaat hier niet om heel veel metingen, dus de bijbehorende fosfaat concentratie bepalen aan de hand van bovenstaande grafiek is op zich nog wel te doen. Maar bij grotere datasets wil je dit natuurlijk liever niet op die manier doen. Bovenstaande lijn is gebaseerd op een aantal metingen van de PAL en bijbehorende fosfaat concentratie. Je kunt deze waarden terug kunt vinden in de sheet *IJklijn* van hetzelfde Excelbestand.
+
+```{exercise}
+importeer de tabel IJKlijn
+```
+
+```{python, warning=F, echo=F}
+ijkpunten = pd.read_excel("Data/DDD_meetgegevens.xlsx", sheet_name = "IJklijn")
+```
+
+Aan de hand van die waarden kunnen we ook zelf de relatie tussen de PAL en fosfaat concentratie bepalen. Om te beginnen kunnen we de data plotten met de `plt.scatter` functie. Dit is een functie uit de *pyplot* submodule van de *matplotlib* module. Importeer deze eerst met als alias *plt*. Dus: `import matplotlib.pyplot as plt`
+
+```{exercise}
+Maak een scatterplot waarin je de waarden uit de kolom 'Extinctie' uitzet tegen de waarden uit de kolom 'Fosfaat'. De grafiek moet er uit zien zoals hieronder.
+```
+
+```{python, warning=F, message=F, echo=F}
+import matplotlib.pyplot as plt
+plt.close("al")
+plt.scatter(x=ijkpunten['Extinctie'], y=ijkpunten['Fosfaat'])
+plt.show()
+```
+
+Er is een duidelijke lineaire relatie, dus we kunnen hier een lineaire regressie model bepalen. Jullie weten hoe je dit in Jamovi kunt doen. Maar ook in Python is dit mogelijk, op meer dan een manier zelfs. We gaan niet kijken of de relatie tussen deze twee variabelen significant is. We weten al dat dit zo is. Wel hebben we de parameters (hellingshoek en snijpunt) van het regressiemodel nodig om de fosfaatconcentraties te kunnen schatten aan de hand van de in het lab gemeten PAL waarden. We gebruiken hier de functie `polyfit` uit de *polynomial* sub-module van *numpy* om de het regressiemodel uit te rekenen. De *x* en *y* parameters spreken voor zich. Met de *deg=1* geef je aan dat het om een gewone lineaire regressie gaat.
+
+```{exercise}
+Reken de hellingshoek en snijpunt uit met de `poly.polyfit` functie.
+
+import numpy.polynomial.polynomial as poly
+lm = 
+```
+
+```{python, echo=F, eval=T}
+import numpy.polynomial.polynomial as poly
+lm = poly.polyfit(x = ijkpunten['Extinctie'], y = ijkpunten['Fosfaat'], deg=1)
+```
+
+Het resultaat bestaat als het goed is uit het snijpunt (= 1,75) en de hellingshoek (= 12.45). Dus, het regressiemodel is $\text{fosfaat_concentratie} = 12,45 \times \text{Extinctie} + 1,75$.
+
+Laten we eerst eens zien hoe goed we met dit regressiemodel de gemeten waarden kunnen inschatten. We gebruiken hier de `poly.polyval` functie voor. Deze heeft als input de x-waarden waarvoor je de bijbehorende y-waarde wilt uitrekenen, en de model coëfficiënten.
+
+```{python}
+ijkpunten['schatting'] = poly.polyval(ijkpunten['Extinctie'], lm)
+print(ijkpunten)
+```
+
+```{exercise}
+Je kunt bovenstaande ook 'handmatig' uitrekenen. Doe dit en zorg dat de resultaten in een nieuwe kolom 'schatting2' van de 'ijkpunten' dataframe komen te staan. Zijn de waarden hetzelfde als in de kolom 'schattingen'?
+```
+
+```{python, echo=F}
+x = ijkpunten['Extinctie']
+ijkpunten['schatting2'] = 12.44598843 * x + 1.7536534
+```
+
+```{exercise}
+Je kunt nu visueel controleren hoe goed het model is, i.a.w., hoe goed de lijn door de punten gaat. Doe dit door eerst met de functie `plt.plot` een lijn te plotten van de geschatte fosfaatconcentraties en daarbovenop met de functie `plt.scatter` de punten met de gemeten fosfaatconcentraties. Het resultaat zou er zoals hieronder moeten uitzien.
+```
+
+```{python, echo=F}
+plt.close("all")
+plt.scatter(x=ijkpunten['Extinctie'], y=ijkpunten['schatting'], c='r')
+plt.plot(ijkpunten['Extinctie'], ijkpunten['schatting'], c='r')
+plt.scatter(x=ijkpunten['Extinctie'], y=ijkpunten['Fosfaat'])
+plt.show()
+```
+
+Wat we wilden was de fosfaatconcentratie te schatten voor onze bodemmonsters, aan de hand van de gemeten PAL waarde. Deze laatste staat in de kolom *PAL_gemiddelde* van het *labdata* dataframe die we hierboven hebben ingelezen.
+
+```{exercise}
+Maak een nieuwe kolom in de *labdata* dataframe, met daar in de schatting van de fosfaatgehalte.
+```
+
+```{python, echo=F, eval=F}
+lm = poly.polyfit(x = ijkpunten['Extinctie'], y = ijkpunten['Fosfaat'], deg=1)
+ijkpunten['schatting'] = poly.polyval(ijkpunten['Extinctie'], lm)
+```
+
+```{exercise}
+Link (join) deze dataframe aan het dataframe *locaties*, en exporteer het resultaat als csv file.
+```
+
+```{python, echo=F, eval=F}
+locatielab = pd.merge(locaties, labdata, how="left", on="Boornummer")
+locatielab.to_csv("Data/labgegevens_met_locaties.csv")
+```
+
+Als alles goed is gegaan kun je de resulterende csv file inladen in QGIS en met behulp van interpolatie een dekkende kaart van het fosfaatconcentratie maken.
+
+## Cross-validatie
+
+Wanneer je een interpolatie uitvoert wil je ook ook weten hoe goed je model is. Neem bijvoorbeeld een regressiemodel, waarmee je aan de hand van temperatuurgegevens wilt voorspellen hoe hard een plant groeit. Je kunt hiervoor een regresssieanalyse uitvoeren in Jamovi, zoals jullie dat hebben geleerd bij de statistieklessen. Een van de uitkomsten die Jamovi daarbij geeft is de [determinatiecoëfficient](https://www.hhofstede.nl/modules/determinatiecoefficient.htm){target="_blank"} ($R^2$). Dit is een maat van hoe goed het model de variatie in de plantegroei weet te verklaren aan de hand van de temperatuur. Maar let op, het is een maat van de gemiddelde afwijking tussen de voorspelde en **gemeten** plantengroei waarden (Figure \@ref(fig:idcaiJhhRbN)).
+
+(ref:idcaiJhhRbNcap) Regressielijn die de relatie tussen temperatuur en plantengroei weergeeft. De residuen (rode lijnen) zijn de verschillen tussen de gemeten waarden (zwarte stippen) en de gemeten waarden.  
+
+```{r idcaiJhhRbN, results='asis', fig.cap='(ref:idcaiJhhRbNcap)', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/8053ded8658cceeefc1225b285790b0d.png', dpi=110)
+```
+
+Maar dit zegt nog niet persé veel over hoe goed het model is in het voorspellen van de plantengroei voor **ongemeten** temperaturen. Om dit te meten kun je een [cross-validatie](https://en.wikipedia.org/wiki/Cross-validation\_(statistics)){target="_blank"} uitvoeren. Hiervoor zijn verschillende  methoden, waarvan je er er een aantal tegen bent gekomen bij de lessen over interpolatie. Hier gaan we kijken hoe we de eerste stap van een k-fold cross-validatie kunnen uitvoeren in Python. Namelijk, het verdelen van de data in *k* gelijke delen. Vervolgens kijken we hoe we, als we de interpolatie hebben uitgevoerd (bijvoorbeeld in QGIS), hoe we de resultaten kunnen valideren.
+
+Deze opdracht optioneel, en bedoeld voor iedereen die graag wil weten hoe je een cross-validatie in Python uitvoert. De uitwerkingen staan er daarom bij. 
+
+### De data
+
+Laten we eerst de benodigde Python modules importeren. Denk er om, voordat je de *raster_functions* module kunt importeren moet je de file *raster_functions.py* runnen. 
+
+```{r, echo=F, warning=F, message=F, comment=F, render=F}
+rf <- reticulate::source_python("functions/raster_functions.py")
+```
+```{python, eval=F, echo=T}
+import sys
+import os 
+import math
+import numpy
+import matplotlib.pyplot as plt
+import gdal
+import raster_functions as rf
+```
+```{r, echo = F, eval=T}
+pd <- import("pandas")
+pt <- import("matplotlib")
+plt <- import("matplotlib.pyplot")
+poly <- import("numpy.polynomial.polynomial")
+```
+
+```{python, eval=T, echo=F}
+import sys
+import os 
+import math
+import pandas as pd
+import numpy as np
+import matplotlib as pt
+import matplotlib.pyplot as plt
+import gdal
+```
+
+
+We gebruiken voor dit voorbeeld de resultaten van het veld- en labwerk. Jullie hebben in paragraaf \@ref(fosfaatberekenen) bij het berekenen van de fosfaat al met deze data gewerkt. Als het goed is hebben jullie de data geëxporteerd als een csv file *labgegevens\_met\_locaties.csv*. 
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Lees de csv file labgegevens\_met\_locaties.csv in en noem het dataframe _df_.
+```
+<details><summary>Antwoord</summary>
+
+```{python, echo=T, eval=T}
+df = pd.read_csv("Data/labgegevens_met_locaties.csv")
+df.head(4)
+```
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+### Verdeel van locaties in 4 folds
+
+We zouden de data eenvoudig in vier delen (k=4) kunnen delen door de eerste 25% bij de eerste groep, de tweede 25% bij de tweede groep, etc. in te delen.
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Bepaal het aantal boorlocaties in de dataframe, en vervolgens hoe groot elke groep (bij benadering) moet zijn.
+```
+<details><summary>Antwoord</summary>
+
+Jullie hebben in paragraaf \@ref(idspk4bQaPL) al gezien dat je met de methode `shape` het aantal rijen en kolommen van een dataframe kunt achterhalen. De methode geeft als uitkomst een lijst [rijen,kolommen]. Je gebruikt dus `[0]` om het aantal rijen te selecteren.
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+# Aantal rijen
+N = df.shape[0]
+
+# Aantal waarnemingen per groep
+N/4
+```
+
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+Zoals je kunt zien is het aantal rijen niet precies door 4 te delen. Wat je kunt doen is het aantal afronden naar het een heel cijfer (gebruik hiervoor de functie `round()`). Dit is het aantal wat je aan de eerste drie groepen toekent. De rest van de waarnemingen ken je aan de vierde groep toe. De vierde groep zal dus iets groter of kleiner zijn, afhankelijk van hoe er afgerond wordt.
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Voeg een extra kolom *fold* toe aan het dataframe *df* en geef in deze kolom aan de hand van de integers 1 t/m 4 aan tot welke groep de waarnemingen (rijen) behoren. In paragraaf \@ref(lijstzelfdewaarden) heb je gezien hoe je een lijst met 5 enen en 5 tweeën kunt creëren. Je kunt dit hier ook toepassen om een lijst met enen, tweeën, drieën en vieren te creeëren. 
+```
+<details><summary>Antwoord</summary>
+
+Run alle code hieronder zelf ook, zodat je ook kunt zien wat er precies gebeurd!
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+N = df.shape[0]
+# Aantal boorlocaties in de eerste drie groepen
+n = round(N/4, 0)
+# Aantal boorlocaties in de vierde groep
+n2 = N - 3 * n
+```
+
+We kunnen nu een lijst maken met de vier nummers volgens dezelfde methode als beschreven in paragraaf \@ref(lijstzelfdewaarden). Let op, hiervoor moeten we de n (nu een floating nummer) wel omzetten naar een integer. 
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+groepen = [1] * int(n) + [2] * int(n) + [3] * int(n) + [4] * int(n2)
+```
+
+Deze kunnen we nu wegschrijven naar een nieuwe kolom _folds_ in het dataframe _df_.
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+df["folds"] = groepen
+```
+
+En laten we ook even controleren of de uitkomst klopt. We doen dit door per groep het aantal waarnemingen te tellen. Zie paragraaf \@ref(aggregatie)  hoe je dit doet met behulp van de functies _groupby_ en _count_.
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+print(df.head(4))
+```
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+df.groupby('folds')['folds'].agg('count')
+```
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+### Random verdeling van punten
+
+We hebben nu een kolom toegevoegd aan de tabel _df_. We kunnen deze vervolgens als vier aparte csv files wegschrijven, waarbij in elke file een van de groepen (folds) wordt weggelaten. Deze kunnen we dan gebruiken als input voor de interpolaties in QGIS.
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Maar, voordat we verder gaan, klopt het eigenlijk wat we hierboven hebben gedaan? Hebben we de data op de goede manier verdeeld?
+```
+<details><summary>Antwoord</summary>
+Nee, de boorlocaties zouden willekeurig aan een groep toegekend moeten worden. Dit is omdat de nummers van de boor locaties waarschijnlijk een bepaald schema volgen. Bijvoorbeeld volgens onderstaande schema.
+
+(ref:idFilBTIqhgcap) Fictief bemonsteringsschema voor een veld waarin de pH van zuid naar noord toeneemt.
+
+```{r idFilBTIqhg, results='asis', fig.cap='(ref:idFilBTIqhgcap)', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/k-fold-selection.svg')
+```
+
+Stel nu dat we de interpolatie uitvoeren op basis van de blauwe locaties (de training punten) en dat we de groene punten gebruiken om de interpolatie te valideren (de test punten). De validatie gebeurd in dit geval aan de hand van punten met pH waarden die lager zijn dan de pH waarden in de training locaties. Je bent dus in feite aan het extrapoleren i.p.v. interpoleren. De evaluatie zal hierdoor onredelijk slecht uitvallen.
+
+In het algemeen moet je er naar streven dat de waarden in de test-punten (grotendeels) binnen de range van waarden vallen die in de training locaties zijn gemeten. De kans daarop is het grootst als je de training-punten en test-punten willekeurig kiest. Bij een k-fold crossvalidatie betekent dat dat je de punten willekeurig aan een van de _k_ groepen moet toewijzen.
+
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+In je antwoord hierboven heb je als het goed is aangegeven dat de punten willekeurig aan  een van de vier groepen (folds) toegewezen moet worden. Maar hoe kunnen we dit doen? Het makkelijkste is om de waarden in de nieuwe kolom _folds_ door elkaar te husselen. We kunnen dit doen met de `shuffle()` of `sample` functies uit de _random_ library. [Hier](https://www.geeksforgeeks.org/python-ways-to-shuffle-a-list/) vind je een uitleg over deze functies. 
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Zorg dat de waarden 1 t/m 4 in de kolom *fold* op willekeurige volgorde komen te staan. Hiervoor schud je de waarden in de kolom als het ware door elkaar.
+```
+<details><summary>Antwoord</summary>
+
+We gebruiken hier de functie `shuffle`. Let op, deze functie verandert de input lijst. Als dit niet wenselijk is, gebruik dan de functie `random`. We herhalen hieronder de code van hierboven, met een extra stap; het shufflen van de groepen.
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+# Importeerd de library random
+import random
+
+# Herhaal de code van hierboven
+df = pd.read_csv("Data/labgegevens_met_locaties.csv")
+N = df.shape[0]
+n = round(N/4, 0)
+n2 = N - 3 * n
+
+# Laten we de vector met waarden nog een keer creëren
+groepen = [1] * int(n) + [2] * int(n) + [3] * int(n) + [4] * int(n2)
+
+# En nu gebruiken we de shuffle functie om deze waarden door elkaar te schudden.
+# Let op, deze functie verandert de volgorde 'in place'. Dat wil zeggen, het
+# verandert de oorspronkelijke input lijst.
+random.shuffle(groepen)
+
+# En deze voegen we opnieuw toe aan de dataframe df (we overschrijven de 
+# kolom die we eerder hebben gemaakt)
+df["folds"] = groepen
+```
+
+En we kunnen nu controleren of de groepen nu wel in willekeurig volgorde in de kolom _folds_ staan.
+
+```{python}
+df.head(n=4)
+```
+
+En om er zeker van te zijn dat elke groep nog (min of meer) even groot is.
+
+```{python}
+df.groupby('folds')['folds'].agg('count')
+```
+
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+### Interpolatie in QGIS
+Voor de interpolatie gebruik je elke combinatie van drie groepen (folds) als input, en test je het resultaat a.d.h.v. de vierde groep. We kunnen hiervoor elke combinatie van drie groepen exporteren als een aparte csv file met training punten. Deze kunnen vervolgens gebruikt worden om 4x een interpolatie in QGIS uit te voeren (het uitvoeren van een interpolatie in Python is iets voor een andere keer).
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Exporteer de data in vier csv files, elk met een andere combinatie van de vier groepen.
+```
+<details><summary>Antwoord</summary>
+
+Laten we als eerste de groepen 2, 3 3 4 samen als een csv exporteren. In plaats van deze groepen te selecteren, gebruiken we de `!=` om te filteren wat we **niet** willen selecteren. De uitkomst is een lijst met True (niet onderdeel van groep 1) en False (wel onderdeel van groep 1). 
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+selectie = (df['folds'] != 1)
+```
+
+We kunnen dit gebruiken om de rijen te selecteren die we willen exporteren. 
+
+```{python}
+df[selectie].to_csv("Data/fold_1.csv")
+```
+
+We kunnen nu op dezelfde manier de andere combinatie van groepen exporteren als training data sets. Let op, de twee stappen hierboven worden hieronder in een stap gecombineerd.
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+df[(df['folds'] != 2)].to_csv("Data/fold_2.csv")
+df[(df['folds'] != 3)].to_csv("Data/fold_3.csv")
+df[(df['folds'] != 4)].to_csv("Data/fold_4.csv")
+```
+</details>
+
+:::{.exercise}
+We kunnen de bovenstaande code ook in één keer uitvoeren. Of nog beter, we kunnen er een functie van maken die we vervolgens kunnen hergebruiken. Click onderstaande als je wilt zien hoe je dit kunt doen.
+:::
+<details><summary>Click hier voor details</summary>
+
+We maken een nieuwe functie `kfold_split`. Als input heeft deze functie een dataframe nodig (*df*), en het aantal groepen (*folds*) waarin je de rijen van de dataframe in wilt verdelen (*k*). De uitkomst is een kopie van de input dataframe met een extra kolom met daarin de groep waarin de betreffende rij is ingedeeld. 
+
+Wil je de dataframe meteen exporteren als csv file, geef dan de naam (zonder extensie) van de output file (*output*). Wil je elke training set als aparte csv file exporteren, set dan separate=True. Dus, `kfold_split(df = df, k=3, output="test", separate=True)`. Let op, bij dit voorbeeld worden er twee files gecreëerd, namelijk *test_fold_1.csv*, *test_fold_2.csv* en *test_fold_3.csv*. Check zelf dat de *test_fold_1.csv* all rijen bevat behalve die behorende tot fold 1. 
+
+
+```{python, echo=T, eval=F}
+def kfold_split(df, k, output=None, separate=True):
+
+  # Importeerd de library random
+  import random
+  import pandas as pd
+  
+  # Read in the file, and determine number of samples per fold
+  N = df.shape[0]
+  n = int(round(N/4, 0))
+  n2 = int(N - 3 * n)
+  
+  # Create column 'folds' with group membership to dataframe.
+  # The for loop is used to create for each fold the right number of samples
+  gr = []
+  for i in range(k-1):
+    j = int(i+1)
+    gr = gr + n * [j]
+  gr = gr + n2 * [k]
+  
+  # Shuffle the numbers, needed in case the relevant values in the table
+  # have a non-random order.
+  random.shuffle(gr)
+  
+  # Write the list with randomly ordered group numbers to the column 'folds'
+  # in the imported dataframe
+  df["folds"] = gr
+  
+  # If output is given, the rows belonging to each group of folds is exported
+  if output is not None:
+    # if separate = True, each group of folds is exported as a separate file
+    if separate == True:
+      for x in range(k):
+        df[(df['folds'] != x+1)].to_csv("{}_fold_{}.csv".format(output, x+1))
+    # If separate = False, the dataframe is exported as csv
+    else:
+      df.to_csv("{}_{}folds.csv".formatoutput, k)
+  return df
+```
+
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+Stel nu dat je wilt een IDW interpolatie uitvoeren, maar je weet niet of je dit met de power 2 of 3 moet doen. Je kunt dan cross-validatie gebruiken om te kijken welke setting de beste resultaten oplevert. Om dit te doen volg je de volgende stappen:
+
+1. Importeer de vier csv file met training data in QGIS. Voer vier keer een IDW met power 2 uit, elke keer met een andere training set als input. 
+2. Bewaar elke keer de resulterende rasterlaag met een duidelijke naam. Voor het resultaat gebaseerd op de punten uit _fold_1.csv_ zou je de resulterende rasterlaag bijvoorbeeld *v_surf_idw_p2_fold1.tif* kunnen noemen. 
+2. Voer nu hetzelfde uit, maar dat met power 3 als setting. De eerste rasterlaag noem je nu bijvoorbeeld *v_surf_idw_p3_fold1.tif*. 
+
+Voor de vervolgstap, het vergelijken van de gemeten en geïnterpoleerde waarden gaan we weer terug naar Python. We zullen hiervoor deels de code hergebruiken die we eerder al zijn tegengekomen om rasterwaarden in te lezen voor gegeven locaties (paragraaf \@ref(idq96WTi5LI)).
+
+```{r, echo=F, eval=T, warning=F, error=F, message=F}
+# Load libraries
+library(sp)
+library(gstat)
+library(sf)
+library(raster)
+
+# Set working directory
+setwd("Data")
+
+# Output file namen
+fn = c("v_surf_idw_p2_fold1.tif", "v_surf_idw_p2_fold2.tif", 
+       "v_surf_idw_p2_fold3.tif", "v_surf_idw_p2_fold4.tif")
+
+# De data, met daarbij de vier groepen -> spatial points
+mydf <- py$df
+dsp <- st_as_sf(mydf, coords = c("Xcoord", "Ycoord"), crs = 28992)
+
+# Create raster
+e <- extent(dsp)
+e <- extend(e, c(10,10))
+res <- 5
+r <- raster(ext=e, resolution=res, crs=crs(dsp))
+
+invisible(capture.output(
+for(i in 1:length(fn)){
+  training <- dsp %>%
+    filter(folds != i)
+  dft <-  as_Spatial(training)
+  tr <- raster(r)
+  gs <- gstat(formula=fosfaat~1, data=dft, nmax=12, set = list(idp = 2))
+  idw <- interpolate(tr, gs)
+  writeRaster(x=idw, filename=fn[i], overwrite=TRUE)  
+}))
+
+# Output file namen
+fn = c("v_surf_idw_p3_fold1.tif", "v_surf_idw_p3_fold2.tif", 
+       "v_surf_idw_p3_fold3.tif", "v_surf_idw_p3_fold4.tif")
+
+# De data, met daarbij de vier groepen -> spatial points
+mydf <- py$df
+dsp <- st_as_sf(mydf, coords = c("Xcoord", "Ycoord"), crs = 28992)
+
+# Create raster
+e <- extent(dsp)
+e <- extend(e, c(10,10))
+res <- 5
+r <- raster(ext=e, resolution=res, crs=crs(dsp))
+
+invisible(capture.output(
+for(i in 1:length(fn)){
+  training <- dsp %>%
+    filter(folds != i)
+  dft <-  as_Spatial(training)
+  tr <- raster(r)
+  gs <- gstat(formula=fosfaat~1, data=dft, nmax=12, set = list(idp = 3))
+  idw <- interpolate(tr, gs)
+  writeRaster(x=idw, filename=fn[i], overwrite=TRUE)
+}))
+```
+
+### Geinterpoleerde waarden testpunten
+
+In paragraaf \@ref(idq96WTi5LI) heb je voor een tweetal locaties de NDVI waarden opgehaald uit een aantal satelietbeelden. Hier ga je hetzelfde doen, behalve dat we hier 4 x 9 locaties (de testlocaties) hebben waarvoor we de geschatte waarden willen ophalen. 
+
+Als je rasterlagen in vorige stap een naam hebt gegeven volgens het voorgestelde schema, dan wil je voor de testlocaties van groep 1 de waarden uit de rasterlagen *v_surf_idw_p2_fold1.tif* en *v_surf_idw_p3_fold1.tif* ophalen. Dit zijn de lagen die zijn gebaseerd op de training dataset met punten uit groep 2 t/m 4. Het is belangrijk dat je snapt waarom, dus kom je er niet uit, vraag!
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Laten we makkelijk beginnen. Schrijf een script waarmee je de waarden van de tif files *v_surf_idw_p2_fold1.tif* ophaalt voor de locaties in testgroep 1
+```
+<details><summary>Antwoord</summary>
+
+De rasterlaag *v_surf_idw_p2_fold1.tif* is gebaseerd op de training dataset bestaande uit de punten van groep 2 t/m 4. We willen dus kijken hoe goed deze interpolatie de waarden voor de locatie in groep 1 inschat. 
+
+```{python, eval=F, echo=T, warning=F, error=F, message=F}
+# Ga naar locatie met bestanden
+os.chdir("Data")
+
+# Naam van de rasterfile
+rast = "v_surf_idw_p2_fold1.tif"
+
+# Create empty lists waarin raster waarden worden bewaard
+rastvals = []
+
+# Selecteer de punten uit groep 1. Zonder de 'copy()' methode is de testlocs
+# dataframe gelinked aan df (in database termen, zonder de copy() op het einde
+# creëer je een view i.p.v. een tabel. In dit geval hebben we een tabel nodig.
+# om er een database term voor te gebruiken)
+testlocs = df.loc[(df['folds'] == 1)].copy()
+numrows = testlocs.shape[0]
+
+# Lees voor elk punt de rasterwaarde in
+for i in range(numrows):
+  x = testlocs['Xcoord'].iloc[i]
+  y = testlocs['Ycoord'].iloc[i]
+  rastvals.append(rf.get_value_from_raster(rast, x, y))
+
+# Voeg de waarden toe aan de tabel
+testlocs['geschat'] = rastvals
+print(testlocs)
+```
+```{python, eval=T, echo=F, warning=F, error=F, message=F}
+# Ga naar locatie met bestanden
+os.chdir("Data")
+
+# Naam van de rasterfile
+rast = "v_surf_idw_p2_fold1.tif"
+
+# Create empty lists waarin raster waarden worden bewaard
+rastvals = []
+
+# Selecteer de punten uit groep 1. Zonder de 'copy()' methode is de testlocs
+# dataframe gelinked aan df (in database termen, zonder de copy() op het einde
+# creëer je een view i.p.v. een tabel. In dit geval hebben we een tabel nodig.
+# om er een database term voor te gebruiken)
+testlocs = df.loc[(df['folds'] == 1)].copy()
+numrows = testlocs.shape[0]
+
+# Lees voor elk punt de rasterwaarde in
+for i in range(numrows):
+  x = testlocs['Xcoord'].iloc[i]
+  y = testlocs['Ycoord'].iloc[i]
+  rastvals.append(get_value_from_raster(rast, x, y))
+
+# Voeg de waarden toe aan de tabel
+testlocs['geschat'] = rastvals
+print(testlocs)
+```
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+We hebben nu de tabel *testlocs* met daarin een kolom 'fosfaat' met fosfaatgehalte, en een kolom 'geschat' met de geschatte waarden. We kunnen hiermee de root mean square error uitrekenen zoals jullie dat tijdens de interpolatielessen hebben geleerd.
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Bereken de RMSE gebaseerd op de geschatte en gemeten fosfaatwaarden in de tabel *testlocs*. 
+```
+<details><summary>Antwoord</summary>
+
+```{python, eval=T, echo=T, warning=F, error=F, message=F}
+# Bereken het kwadraat van het verschil (error)
+testlocs['error'] = (testlocs['fosfaat'] - testlocs['geschat'])**2
+
+# Bereken de wortel van de gemiddelde error
+rmse = math.sqrt(testlocs['error'].mean())
+
+# Print result
+print(rmse)
+```
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+Als je bovenstaande gelukt is, kun je dit doen voor elk van de vier interpolaties. De gemiddelde *rsme* geeft dan aan hoe goed de betreffende interpolatie methode (hier de IDW met power 2) is. 
+
+<!-- begin ----------------------------------------------------------------- -->
+```{exercise}
+Herhaal bovenstaande, maar dan voor de resultaten van de vier IDW interpolaties met power 2 die je hebt uitgevoerd. Gebruik hiervoor een loop. Doe dit vervolgens ook voor de IDW interpolaties met power 3 die je hebt uitgevoerd.
+```
+<details><summary>Antwoord</summary>
+
+We gebruiken de bovenstaande code, maar gebruiken nu een loop om dit vier keer te doen, elke keer voor een andere van de vier IDW power 2 resultaten (begin je te snappen waarom het zo belangrijk is te snappen hoe een loop in Python werkt?).
+
+```{python, eval=T, echo=T, warning=F, error=F, message=F}
+# Importeer de functie mean uit de module statistics
+from statistics import mean 
+
+# Ga naar locatie met bestanden
+os.chdir("Data")
+
+# De files waarvoor je de waarden per puntlocatie wilt inlezen
+idwp2 = ["v_surf_idw_p2_fold1.tif", 
+         "v_surf_idw_p2_fold2.tif", 
+         "v_surf_idw_p2_fold3.tif", 
+         "v_surf_idw_p2_fold4.tif"]
+rmse = []
+
+for j in range(4):
+  fold = j+1
+  rast = idwp2[j]
+
+  testlocs = df.loc[(df['folds'] == fold)].copy()
+  numrows = testlocs.shape[0]
+
+  # Lees voor elk punt de rasterwaarde in
+  rastvals = []
+  for i in range(numrows):
+    x = testlocs['Xcoord'].iloc[i]
+    y = testlocs['Ycoord'].iloc[i]
+    rastvals.append(get_value_from_raster(rast, x, y))
+  
+  # Voeg de waarden toe aan de tabel
+  testlocs['geschat'] = rastvals
+  
+  # Bereken de rsme
+  testlocs['error'] = (testlocs['fosfaat'] - testlocs['geschat'])**2
+  rmse.append(math.sqrt(testlocs['error'].mean()))
+
+average_rmse = mean(rmse)
+print(round(average_rmse, 3))
+```
+
+En nu doen we hetzelfde voor de resultaten van de IDW interpolaties met power 3. 
+
+```{python, eval=T, echo=T, warning=F, error=F, message=F}
+# Ga naar locatie met bestanden
+os.chdir("Data")
+
+# De files waarvoor je de waarden per puntlocatie wilt inlezen
+idwp3 = ["v_surf_idw_p3_fold1.tif", 
+         "v_surf_idw_p3_fold2.tif", 
+         "v_surf_idw_p3_fold3.tif", 
+         "v_surf_idw_p3_fold4.tif"]
+rmse = []
+
+for j in range(4):
+  fold = j+1
+  rast = idwp3[j]
+
+  testlocs = df.loc[(df['folds'] == fold)].copy()
+  numrows = testlocs.shape[0]
+
+  # Lees voor elk punt de rasterwaarde in
+  rastvals = []
+  for i in range(numrows):
+    x = testlocs['Xcoord'].iloc[i]
+    y = testlocs['Ycoord'].iloc[i]
+    rastvals.append(get_value_from_raster(rast, x, y))
+  
+  # Voeg de waarden toe aan de tabel
+  testlocs['geschat'] = rastvals
+  
+  # Bereken de rsme
+  testlocs['error'] = (testlocs['fosfaat'] - testlocs['geschat'])**2
+  rmse.append(math.sqrt(testlocs['error'].mean()))
+
+average_rmse = mean(rmse)
+print(round(average_rmse, 3))
+```
+</details>
+<!-- end ------------------------------------------------------------------- -->
+
+De resultaten laten zien dat de gemiddelde RMSE van de IDW met power 3 net wat hoger is dan die van de IDW met power 2 uitgevoerd. Dit betekent dat de IDW interpolatie met power 2 de voorkeur heeft. Ik zeg hier waarschijnlijk, omdat de resultaten bij jou anders zullen zijn. Het resultaat hangt immers af van hoe de punten in groepen zijn verdeeld, en dit gebeurd willekeurig. Dat betekent dat het ook een keer kan gebeuren dat de IDW met power 3 een betere gemiddelde RSME geeft. Gezien het kleine verschil tussen de twee is dit zeker mogelijk.
+
+De laatste stap is nu de IDW nog een keer uit te voeren, maar deze keer met alle punten als input. Dit is dan je uiteindelijke resultaat.
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1128 @@
+# Werken met Pandas {#id2LYfcfpyq}
+
+Voor data analyse heb je de keuze uit verschillende programma's en software tools. Als het gaat over programmeer/scripting talen zijn twee van de meest gebruikte talen R en Python. Welke is nu de beste om te gebruiken? Dat hangt grotendeels af van wat je wilt bereiken. Voor puur data analyse heeft R veel sterke punten, waaronder fantastische visualisatie mogelijkheden om resultaten te communiceren. Aan de andere kant is Python een meer algemene programmeertaal en is daarom mogelijk een betere keuze als je de resultaten van je analyse meteen wilt incorporeren in een applicatie of website. Het wordt verder veel gebruikt in meer complexe data verwerking, opslag en analyse workflows.
+
+```{r ideWtNri9eq, results='asis', fig.cap='Data workflow, van exploratieve analyse via ETL tot data analyse', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/ETLA.png', dpi=100)
+```
+
+In deze serie lessen hebben jullie kennis gemaakt met Python als een handige tool in een 'data verwerking en analyse pipeline'. Tot nu toe hebben jullie met name gewerkt aan extractie van data (bijvoorbeeld het extraheren van data uit satelliet beelden), en het transformeren van de data.
+
+In deze les gaan we meer specifiek kijken naar hoe we data kunnen omzetten naar, visualiseren en exporteren als tabellen, zoals je dat ook gewend bent in bijvoorbeeld in Excel. Het is niet alleen een meer intuïtieve manier om met data te werken, het is ook hoe de meeste analyse programma's met data werken, en hoe databases de data opslaan. Om dit mogelijk te maken hebben we de *Pandas* module nodig.
+
+## Installatie van de Pandas module {#idYonrFYn1h}
+
+Je kunt Pandas op dezelfde manier installeren als dat je al eerder matplotlib hebt geïnstalleerd. Zie hiervoor de instructie video van Mark in Week 1 op BB. Als alternatief kun je dit ook rechtstreeks in Visual Studio Code doen. Open hiervoor eerst de terminal (klik op Terminal in het menu bovenaan, en selecteer `New terminal`. Dit opent een console onderaan dit document. Op de command line kun je rechtstreeks Python commando's uitvoeren. Dus ook de `pip` commando waarmee je eerder al Python libraries hebt geïnstalleerd.
+
+Ga eerst naar de folder waar je Python hebt geïnstalleerd. Zoals Mark je al heeft laten zien kun je zien waar dat is door met je muis over de Python versie helemaal links onderin je Visual Studio Code scherm te bewegen. Bij bij is dit bijvoorbeeld in c:\\python. Tik nu op de command line het path waar je Python hebt geïnstalleerd, gevolgd door een slashback en Scripts. Voor mij is dat `cd c:\python\Scripts`. Nu kun je *Pandas* installeren met het commando `.\pip install pandas` (die `.\` is alleen nodig als je pip in Visual Studio Code gebruikt, vandaar dat je die eerder niet hebt gebruikt).
+
+```{r id70EoP4XxN, results='asis', fig.cap='Installeer Pandas in de Terminal met pip', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/gbGMvRwRCf.png', dpi=110)
+```
+
+Nadat je de Pandas hebt geïnstalleerd kun je deze module (en andere benodigde modules) importeren zodat je de functies uit deze libraries kunt gebruiken. Je roept een functie aan met de naam van de module, gevolgd door een punt en dan de naam van de functie. Bijvoorbeeld, om een csv file te importeren gebruik je `pandas.read_csv()`. Om de regels iets korter te houden, en iets minder te hoeven typen kun je een module importeren met een alias. Je kunt pandas bijvoorbeeld importeren met de alias *pd*. Je gebruikt dan bijvoorbeeld `pd.read_csv()` om een csv te importeren.
+
+```{r, echo = F, eval=T}
+pd <- import("pandas")
+pt <- import("matplotlib")
+plt <- import("matplotlib.pyplot")
+poly <- import("numpy.polynomial.polynomial")
+```
+
+```{python, eval=T}
+import pandas as pd
+import numpy as np
+import matplotlib as pt
+import matplotlib.pyplot as plt
+import gdal
+```
+
+## Data structuren {#idncmc6TkVo}
+
+De *Pandas* module is speciaal gericht op data analyse. Pandas werkt met twee verschillende manieren om data op te slaan, namelijk *Series*, en *Dataframe*. Als je het met Excel vergelijkt, dan kun je een *Dataframe* met een tabel in een sheet vergelijken, en een *Series* met een kolom in de tabel.
+
+```{r idpwhV1SMuw, results='asis', fig.cap='Pandas Series en Dataframe.', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/series-and-dataframe_small.png', dpi=96)
+```
+
+Misschien is je al opgevallen dat een *Series* erg lijkt op de *List* uit standaard Python (paragraaf \@ref(idOC8isTMey))). Dat klopt, in beide gaat het om een array van data. Een belangrijk verschil is dat in tegenstelling tot een *List*, een *Series* alleen data van hetzelfde type kan bevatten.
+
+We zullen in eerste instantie vooral werken met dataframes. Dit zijn tabellen zoals in bovenstaande figuur. Een belangrijk verschil met bijvoorbeeld een tabel in Excel is dat een kolom slechts een type data kan bevatten. Dus, of het bevat nummers, of tekst.
+
+Voorbeelden van data die goed in een dataframe opgeslagen kan worden:
+
+-   Een lijst met studentengegevens: elke rij vertegenwoordigd één student. Elke kolom vertegenwoordigt een eigenschap zoals de naam van de student (string), de leeftijd (nummer), geboortedatum (datum) en het adres (string).
+-   Een tabel met landengegevens, waarbij elke rij een land vertegenwoordigt, en de kolommen informatie bevatten over de naam van het land, het aantal inwoners, de gemiddelde leeftijd van de populatie, en het aantal huishoudens.
+-   Steekproefgegevens, met de gegevens van elke steekproef in een aparte rij in de tabel, en in de kolommen de waarden die gemeten zijn, zoals bodemdichtheid, type bodem, en type vegetatie.
+
+Zoals bovenstaande voorbeelden laten zien is het goed gebruik bij data analyse dat de variabelen in kolommen staan, en de waarnemingen of metingen in rijen. Denk bijvoorbeeld ook aan de attributentabel van een GIS vectorlaag. Elke rij van de attributentabel is gekoppeld aan een punt, lijn of polygon. In elke kolom staat een andere eigenschap van die punt, lijn of polygon.
+
+## Maken van een dataframe {#idFfWCWQZDd}
+
+In het voorbeeld hieronder worden drie lijsten samengevoegd in een lijst. Elke lijst bestaat uit een naam en een nummer (de leeftijd) van een proefpersoon.
+
+```{python, results = "hold"}
+scholieren = [['Tom', 10], ['Nick', 15], ['Julia', 14]] 
+print(scholieren)
+```
+
+Een lijst met lijsten; voor programmering kan dit prima zijn, maar voor data analyse is dit niet een handige en intuïtieve manier om de data weer te geven. Voor data analyse werken we vaker/liever met tabellen1. Nu kun je gelukkig bovenstaande lijst met lijsten eenvoudig in een dataframe (tabel) omzetten met de functie `pd.DataFrame()`.
+
+```{python, results = "hold"}
+proefpersonen = pd.DataFrame(scholieren, columns = ['Naam', 'Leefdtijd']) 
+print(proefpersonen)
+```
+
+In de resulterende tabel staan de variabelen (naam en leeftijd) in kolommen, en de waarnemingen (betreffende studenten) in de rijen. Een stuk makkelijker te lezen; je kunt in een oogopslag zien dat het hier om drie studenten gaat, die ieder door twee kenmerken (variabelen) worden beschreven.
+
+Zoals je ziet wordt er automatisch een index gegenereerd (voor de rijen). Deze standaard index is vaak prima, maar toch ook goed om te weten dat je ook zelf de index kunt bepalen. We kunnen bijvoorbeeld de index A t/m C gebruiken. Zoals we later zullen zien kan dit van pas komen bij het selecteren van rijen (en/of) kolommen uit de tabel.
+
+```{python, results = "hold"}
+proefpersonen = pd.DataFrame(scholieren, columns = ['Naam', 'Leefdtijd'], index = ['A', 'B', 'C']) 
+proefpersonen 
+```
+
+Data kan ook in andere vormen komen, en dit betekent ook dat er verschillende manieren te zijn om deze tot een dataframe te converteren. In [dit overzicht](https://www.geeksforgeeks.org/different-ways-to-create-pandas-dataframe/) worden er naast bovenstaande voorbeeld nog vijf andere methoden gegeven. Welke methode je nodig hebt, zal afhangen van hoe je de data aangeleverd krijgt. Voorlopig is het alleen van belang dat je weet dat er verschillende methoden zijn,zodat je daar later, mocht je dat nodig hebt, gericht naar kunt zoeken.
+
+## Data importeren & exporteren {#idUuEhWujmv}
+
+### Importeren van een csv file {#idUQ5TzfQmF}
+
+Met data analyse zal je data vaak uit andere bronnen komen, en moet je deze importeren om verder te analyseren. In Python kun je heel veel verschillende soorten data importeren, bijvoorbeeld uit een SQL database met de functie `read_sql`, een Excel (XLS / XLSX) file met de functie `read_excel` of een json file met `read_json`.
+
+Laten we nu een csv file importeren. Als voorbeeld gebruiken we cijfers van het CBS over het jaarlijks aantal landbouwbedrijven tussen 2000 en 2018. Download de data ([LandbouwbedrijvenNederland.csv](Data/LandbouwbedrijvenNederland.csv)) en kopieer het naar je Github repository folder. Om zaken georganiseerd te houden is het het beste om de data in een aparte folder te bewaren, bijvoorbeeld in de sub-folder 'Data'. Je kunt hierna de file inlezen in Python als een Pandas dataframe met de functie `pd.read_csv`.
+
+```{python}
+landbouwbedrijven = pd.read_csv('Data/LandbouwbedrijvenNederland.csv', sep=",")
+```
+
+Met bovenstaande commando lezen we de tabel in Python als een Dataframe. We noemen dit dataframe landbouwbedrijven. We zien verder nog geen tabel. We hebben Python immers nog niet verteld de inhoud van de tabel te laten zien. Laten we dit alsnog eens doen.
+
+```{python}
+print(landbouwbedrijven)
+```
+
+Een zijn enkele zaken die opvallen. Allereerst wordt slechts een deel van de rijen getoond. Dit is vooral handig als het om een heel grote dataframe gaat. Hoe er wordt omgegaan met grote tabellen hangt verder af van wat voor programma je gebruikt. Belangrijk is dat dit slechts een visualisatie is, natuurlijk is alle data er gewoon. Deze kun je in zijn geheel bekijken door het object in de Variabele Explorer van Visual Studio te openen.
+
+(ref:idi5hR6KO1kcap) In de Variabele Explorer van Visual Studio Code kun je kijken welke objecten er zijn gemaakt. Dubbel klikken op een data object (zoals dit dataframe) opent het in een aparte viewer.
+
+```{r idi5hR6KO1k, results='asis', fig.cap='(ref:idi5hR6KO1kcap)', eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/Code_IQoklSEkho.png', dpi=120)
+```
+
+Verder is er een kolom toegevoegd aan het begin van de tabel. Dit is een kolom met de index. Pandas maakt deze automatisch aan zodat het sneller kan zoeken. Lijkt misschien overbodig bij zo'n kleine tabel, maar als het om heel grote tabellen gaat, maakt dit veel verschil. Je kunt ook zelf de kolom aanwijzen waarmee de tabel wordt geïndexeerd, maar dat is voor een andere keer.
+
+Mocht je alleen specifiek kolommen willen importeren, dan kan dat ook. En het is ook makkelijk ook nog. We gebruiken dezelfde functie `read_csv` en het *usecols* argument om aan te geven welke kolommen uit de tabel we willen importeren. We gebruiken hier de methode `.head` om de eerste 4 regels van de resulterende dataframe te selecteren en printen.
+
+```{python}
+url = 'Data/LandbouwbedrijvenNederland.csv'
+cols = ["Bedrijfstypen", "Perioden", "Aantal"]
+df = pd.read_csv(url, usecols=cols) 
+print(df.head(2)) 
+```
+
+Zoals je ziet hebben we deze keer alleen de opgegeven kolommen geimporteerd in het dataframe 'df'. We hebben hierboven eerst de url en de cols gedefinieerd, en die vervolgens als input gebruikt in de `read_csv` functie. Dit maakt het wat leesbaarder, en het maakt het makkelijker de taak te automatiseren.
+
+### Importeer data uit een Excel file {#idmjs24de3}
+
+Je kunt ook data uit een Excel file inlezen met behulp van de `read_excel`. Hiervoor moet je wel eerst een nieuwe module installeren; `xlrd`. Dit doe je op dezelfde manier als je Pandas hebt geïnstalleerd (paragraaf \@ref(idYonrFYn1h)).
+
+Download het Excelbestand [landbouwbedrijven.xlsx](Data/landbouwbedrijven.xlsx) naar je Github repository folder. Om zaken georganiseerd te houden is het het beste om de data in een aparte folder te bewaren, bijvoorbeeld in de sub-folder 'Data'. Nadat je dat gedaan hebt kun je de data importeren.
+
+```{python}
+landbouwbedrijven2 = pd.read_excel("Data/landbouwbedrijven.xlsx", sheet_name="bedrijven")
+print(df)
+```
+
+### Importeer data uit een SQL dbase {#idmjsfZy3v4}
+
+Als je met een SQL database wilt werken moet je eerst een verbinding met de database maken. Hiervoor heb je speciale libraries. Als je bijvoorbeeld verbinding met een SQLite database wilt maken dan heb je de pysqlite3 library nodig. Deze kun je weer met `pip` installeren zoals je dat eerder heb gedaan met de Pandas module (paragraaf \@ref(idYonrFYn1h)).
+
+Als je de module hebt geïnstalleerd is de eerste stap deze te importeren. Vervolgens maak je een connectie met de database met behulp van de functie `connect`. Vervolgens kunnen we een tabel uit de database inlezen met de functie `read_sql_query`.
+
+In het voorbeeld maken we connectie met de *SQLite* database *database.db*. [Download](Data/database.db) deze en voeg die toe aan je github folder met je Python scripts (bijvoorbeeld in de sub-folder *Data*.
+
+```{python}
+# Importeer de module sqlite3
+import sqlite3
+
+# Maak een verbinding met de database
+con = sqlite3.connect("Data/database.db")
+
+# Importeer de tabel purchases uit de database
+df = pd.read_sql_query("SELECT * FROM purchases", con=con)
+
+# Print de tabel
+print(df)
+```
+
+Als je SQL kent dan weet je ook dat je met bovenstaande functie ook eenvoudig Kolommen of rijen kunt selecteren. Je kunt bijvoorbeeld alleen de kolom met apples selecteren.
+
+```{python}
+df = pd.read_sql_query("SELECT apples FROM purchases", con=con)
+print(df)
+```
+
+Of alleen de informatie voor Robert.
+
+```{python}
+df = pd.read_sql_query("SELECT * FROM purchases WHERE Name = 'Robert'", con=con)
+print(df)
+```
+
+### Exporteren van data {#idspk4bQaPL}
+
+Je kunt de data ook net zo makkelijk exporteren. Laten we bijvoorbeeld de *landbouwbedrijven* dataframe exporteren als een nieuwe *csv* file. We voegen eerste een nieuwe kolom toe met random getallen tussen de 0 en 4, als een voorbeeld hoe je de data in een tabel in ongeveer vier gelijke delen kunt verdelen. Dit zou je kunnen gebruiken als basis voor een 4-fold cross-validatie (zie de interpolatielessen).
+
+De random nummers kunnen we genereren met de functie `np.random.randint`. Hiervoor moeten we eerst weten hoeveel rijen dit dataframe heeft. Dat kunnen we hierboven zien, maar we kunnen hiervoor ook de methode `shape` gebruiken. Deze geeft de dimensies van een dataframe. Let op, deze methode heeft geen argumenten nodig, dus je roept deze aan zonder de haakjes erachter.
+
+```{python}
+landbouwbedrijven.shape
+```
+
+We zien hier dat de dataframe 63 rijen en 4 kolommen heeft. We kunnen dit direct gebruiken (we zijn aan het scripten, dus er worden geen getallen over getikt als we het even kunnen vermijden). We hebben alleen het aantal rijen nodig, dus we gebruiken `landbouwbedrijven.shape[0]`.
+
+```{python}
+nr = landbouwbedrijven.shape[0]
+landbouwbedrijven['group'] = np.random.randint(1,5,size=(nr, 1))
+print(df)
+```
+
+We kunnen de data.frame nu exporteren als een csv of Excel file. Hieronder doen we beide. Maar hier moeten we wel weer eerste een nieuwe module installeren; `openpyxl`. Dit doe je op dezelfde manier als je Pandas hebt geïnstalleerd (paragraaf \@ref(idYonrFYn1h)).
+
+```{python}
+landbouwbedrijven.to_csv("Data/landbouwbedrijven_groepen.csv")
+landbouwbedrijven.to_excel("Data/landbouwbedrijven_groepen.xlsx")
+```
+
+En om toch nog even de link naar de lessen *Interpolatie* te maken. Waarom is bovenstaande methode om de data in vier groepen te verdelen niet ideaal, zeker niet als het om een kleine dataset gaat? Wil je meer weten over hoe je Python kunt gebruiken om cross-validatie uit te voeren, lees dan de [complete guide to Python's cross-validation with examples](https://towardsdatascience.com/complete-guide-to-pythons-cross-validation-with-examples-a9676b5cac12).
+
+## Inspecteren van je data {#idzUesTh3fT}
+
+### Beschrijf het dataframe
+
+Het is altijd goed om de data te controleren. We zullen naar een aantal functies/methoden kijken waarmee je de dataframe kunt beschrijven. Ter herinnering, het gaat hier om methoden, oftewel functies die specifiek zijn voor een bepaald type object. In dit geval gaat het om methoden voor Pandas data objecten.
+
+Zo heb je de methode `columns` waarmee je kunt controleren uit wat voor kolommen de dataframe bestaat. Let op, omdat de methode `columns` geen argumenten heeft schrijf je de naam zonder haakjes erachter. De uitkomst is een index. Dit is een type waar we later nog op terugkomen.
+
+```{python}
+# Laat de kolommen zien
+landbouwbedrijven.columns
+```
+
+Om te weten hoe de tabel eruit ziet, kun je ook de eerste paar regels of alleen de laatste paar regels naar de console te printen. Dit doe je met de methoden `head` en de functie `tail`. Hieronder worden de laatste vier regels uitgeprint.
+
+```{python}
+landbouwbedrijven.tail(4)
+```
+
+OK, wat kunnen we nog meer te weten komen over deze tabel? Laten we eens kijken naar de functies `.ndim`, en `.size`. Dit zijn functies die een eigenschap van een dataframe geven. Je voert ook deze uit zonder functie argumenten.
+
+```{python}
+dim = landbouwbedrijven.ndim
+print("Deze tabel bestaat uit {} dimensies".format(dim))
+
+size = landbouwbedrijven.size
+print("De tabel heeft {} cellen".format(size))
+```
+
+Voor een meer algemeen overzicht van de variabelen, type data en het aantal no-data waarden die het dataframe bevat gebruiken we de methode `info()`. Deze functie schrijf je wel met haakjes erachter omdat deze methode een aantal optionele argumenten heeft, zoals je [hier](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.info.html) kunt nalezen.
+
+```{python}
+landbouwbedrijven.info()
+```
+
+Zo'n snel overzicht is best handig. Stel je wilt gaan rekenen met het aantal bedrijven. Als nu de kolom met het aantal bedrijven geen getallen maar tekst bevat heb je een probleem. De `info` functie laat je snel controleren of het data type van alle kolommen klopt. Let daarbij wel op, tekst (strings) worden aangegeven als 'object' datatypes. Dit heeft een technische reden die hier verder niet toe doet.
+
+### Dubbele rijen {#idc5MhPHOkr}
+
+Een van de eerste stappen in elke analyse is het controleren van je data. Een van de problemen die je soms tegenkomt is dat er dubbele rijen in staan. D.w.z., meerdere rijen met precies dezelfde waarden.
+
+We kunnen de functie `duplicated` gebruiken om te checken welke rijen dubbel zijn. De output van deze functie is een boolean vector met True (dubbel) en False (geen dubbele rij). Deze kunnen we gebruiken om de rijen te selecteren die dubbel zijn. Hieronder wordt een voorbeeld dataframe gemaakt met wat rijen die hetzelfde zijn.
+
+```{python}
+# Maak een dataframe
+students = [('jack', 34, 'Sydeny'),
+            ('Riti', 30, 'Delhi'),
+            ('Aadi', 16, 'New York'),
+            ('Riti', 30, 'Delhi'),
+            ('Riti', 30, 'Delhi'),
+            ('Riti', 30, 'Mumbai'),
+            ('Aadi', 40, 'London'),
+            ('Sachin', 30, 'Delhi')
+            ]
+dfObj = pd.DataFrame(students, columns=['Name', 'Age', 'City'])
+print(dfObj)
+```
+
+We kunnen nu controleren welke rijen dezelfde gegevens bevatten.
+
+```{python}
+dfObj.duplicated()
+```
+
+Handig, maar wat als we nu de dubbele rijen willen selecteren. Dit kan door de bovenstaande uitkomst te gebruiken. Wat hier gebeurd is dat je bij een dataframe tussen de vierkante haken de rijen kunt aangeven die je wilt selecteren. Dat kan bij index naam (paragraaf \@ref(idF7Brtn7UB)), en dus ook met een boolean vector waarin voor elke rij wordt aangegeven of je deze wilt meenemen (True) of niet (False).
+
+```{python}
+doubleDFobj = dfObj[dfObj.duplicated()]
+ 
+print("Duplicate Rows except first occurrence based on all columns are :")
+print(doubleDFobj)
+```
+
+Het voorbeeld hierboven is van [deze tutorial](https://thispointer.com/pandas-find-duplicate-rows-in-a-dataframe-based-on-all-or-selected-columns-using-dataframe-duplicated-in-python/). Bekijk deze pagina voor een uitleg van de verschillende opties die deze functie biedt, zoals de mogelijkheid om steeds de laatste rij van de dubbele rijen te laten zien i.p.v. de eerste rij.
+
+Het is handig om te achterhalen welke rijen meer dan een keer in een dataframe voorkomen te identificeren. Maar daarna wil je deze dubbele rijen waarschijnlijk verwijderen. Hiervoor kun je de methode `drop_duplicates()` gebruiken.
+
+```{python}
+dfObj2 = dfObj.drop_duplicates()
+r1 = dfObj.shape[0]
+r2 = dfObj2.shape[0]
+rv = r1 - r2
+
+print("Er zijn {} rijen verwijderd".format(rv))
+```
+
+De methode `drop_duplicates()` geeft als output een kopie van de input dataframe, maar dan met alle dubbele rijen verwijderd. Vandaar dat het resultaat van deze methode als een nieuwe variabele opgeslagen moet worden.
+
+Soms wil je liever de oorspronkelijke tabel aanpassen in plaats van een nieuwe te creeëren. Veel functies, inclusief `drop_duplicates` hebben daarom het argument `inplace`. Als je `inplace=True` gebruikt dan wordt de input dataframe aangepast in plaats van dat er een nieuwe dataframe wordt gecreëerd. Bekijk de code hieronder maar eens.
+
+```{python}
+print(dfObj.shape)
+dfObj.drop_duplicates(inplace=True, keep=False)
+print(dfObj.shape)
+```
+
+Een andere belangrijk argument van de functie drop\_duplicates is keep. Deze heeft drie opties:
+
+-   first: (default) verwijdert alle dubbele rijen behalve de eerste
+-   last: verwijdert alle dubbele rijen behalve de laatste
+-   False: verwijdert alle dubbele rijen.
+
+Omdat we het keep argument niet hebben gebruikt in de code hierboven heeft Pandas de standaard optie genomen. Dat wil zeggen, als er twee rijen hetzelfde zijn dan verwijdert Pandas de tweede.
+
+### Kolommen opschonen {#idI9APy93fu}
+
+Je zult ze in de praktijk misschien al eens langs hebben zien komen, tabellen met erg lange kolomnamen, of namen met symbolen, spaties of typefouten. Dit is vaak lastig als je met analyses aan de gang gaat. Namen met spaties zul je dan bijvoorbeeld steeds met quotes moeten omgeven.
+
+Gelukkig heeft Python/Pandas verschillende opties om de namen van kolommen aan te passen. Als voorbeeld zullen we werken met de tabel met informatie over films. Laten we die eerst nog eens importeren. Als je vervolgens de kolommen uit print zul je zien dat niet alle namen even handig zijn.
+
+```{python}
+films = pd.read_csv("data/IMDB-Movie-Data.csv", index_col="Title")
+films.columns
+```
+
+We kunnen nu de methode `rename` gebruiken om bepaalde of alle kolommen een nieuwe naam te geven. Bijvoorbeeld, namen met haakjes en spaties zijn lastig als je later de data wilt analyseren. Laten we daarom de namen van kolom 7 en 10 aanpassen. We willen deze veranderingen maken in de oorspronkelijke tabel, dus gebruiken we hier *inplace=True*.
+
+```{python}
+films.rename(columns={
+        'Runtime (Minutes)': 'Runtime', 
+        'Revenue (Millions)': 'Revenue_millions'
+    }, inplace=True)
+films.columns
+```
+
+Stel nu we willen alle hoofdletters veranderen in kleine letters. We kunnen dit op dezelfde manier als hierboven doen, maar dat is best veel werk. Helemaal als we tabellen met nog veel meer kolommen hebben. We kunnen in zo'n geval de kolomnamen een voor een aanpassen met behulp van een loop en de methode `lower`.
+
+```{python}
+cols = films.columns
+newcols = []
+for colname in cols:
+    #print(i)
+    newcols.append(colname.lower())
+newcols
+films.columns = newcols
+print(films.columns)
+```
+
+```{exercise}
+Leg in je eigen woorden uit wat er in bovenstaande code gebeurd, of vertaal het naar een flowchart.
+```
+
+Je kunt hetzelfde ook doen met een zogenaamde *list comprehension*. Dit is een kortere manier om een loop op te schrijven. Het wordt veel gebruikt in Python, onder meer omdat het je code wat beter leesbaar kan maken.
+
+Probeer zelf de loop in onderstaande code te herkennen. Laten we de tabel opnieuw importeren, de kolomnamen van kolom 7 en 10 aanpassen en vervolgens m.b.v. de *list comprehension* methode alle hoofdletters omzetten naar gewone letters.
+
+```{python}
+# Lees de data opnieuw in
+films = pd.read_csv("data/IMDB-Movie-Data.csv", index_col="Title")
+
+# Pas de lastige kolomnamen aan
+films.rename(columns={
+        'Runtime (Minutes)': 'Runtime', 
+        'Revenue (Millions)': 'Revenue_millions'
+    }, inplace=True)
+
+# Verander alle letters to lower case
+films.columns = [col.lower() for col in films]
+print(films.columns)
+```
+
+Al die verschillende opties om hetzelfde te doen kunnen verwarrend werken. Het is dan ook niet de bedoeling dat je al deze verschillende methoden onthoudt. Het is wel goed de verschillende methoden te herkennen als je deze in voorbeelden tegenkomt.
+
+### Missende waarden {#idZusSrAPvJ}
+
+Een ander probleem wat je tegen kan komen zijn missende waarden. Er zijn verschillende manieren om met deze missende waarden om te gaan. Je kunt alle rijen en/of alle kolommen met een of meerdere missende waarden verwijderen. Het alternatief is om de missende waarden te vervangen. Dit is een techniek die *imputatie* heet.
+
+Laten we eerst eens kijken hoeveel missende waarden er in elke kolom van de dataset staan. De eerste stap is te controleren welke cellen in de dataframe een Null waarde hebben. We gebruiken de methode `isnull` om de lege cellen in de dataframe te identificeren. Dit geeft een dataframe met in elke cell *False* als het een waarde bevat, en *True* als het geen waarde bevat. Vervolgens gebruiken we de functie `sum` om per kolom te tellen hoeveel cellen er zijn met *True*. Dit werkt omdat de functie `sum` True als 1 beschouwt en False als 0.
+
+```{python}
+dftemp = films.isnull()
+dftemp.sum()
+```
+
+We kunnen dit ook in een keer opschrijven. Dit aan elkaar plakken van objecten en functies heet chaining. Je kunt op deze manier een 'pipeline' bouwen waarbij steeds de uitkomst van een methode als input dient voor de volgende methode in de pipeline.
+
+```{python}
+films.isnull().sum()
+```
+
+Het resultaat laat zien dat er in de kolom *revenue\_millions* 128 en in de kolom *metascore* 64 missende waarden voorkomen.
+
+Dit was het makkelijker deel. Nu moet je beslissen wat je met de missende data gaat doen. Ga je ze verwijderen? Zo ja, ga je de kolommen met missende waarden verwijderen, of juist de rijen? Of ga je de waarden vervangen door middel van imputatie. Bij de laatste optie kun je bijvoorbeeld denken aan de vervanging van alle missende waarden door het gemiddelde van de gehele kolom.
+
+Om zo'n beslissing te nemen moet je kennis hebben van de data. Verder hangt het af van de analyse methoden. We gaan daar hier niet verder op in, maar laten alleen zien hoe je missende waarden kunt verwijderen of vervangen. Het verwijderen doen we met de methode `dropna`.
+
+```{python}
+films2 = films.dropna()
+print(films.shape)
+print(films2.shape)
+```
+
+De methode `dropna` verwijderd alle rijen met een of meerdere nulwaarde. Het schrijft de opgeschoonde data naar een nieuwe tabel. Als je de missende waarden uit de oorspronkelijke tabel wilt verwijderen kun je weer inplace=True gebruiken.
+
+In dit geval worden met bovenstaande code de 128 rijen verwijderd waar revenue\_millions nul is en de 64 rijen waar metascore nul is. Dit lijkt duidelijk een verspilling, aangezien de andere kolommen van die gedropte rijen perfect goede gegevens bevatten.
+
+Als je de twee kolommen met missende waarden niet nodig hebt, dan kun je ook beslissen om de kolommen te verwijderen. Dit kan door in bovenstaande functie als argument `axis=1` in te stellen.
+
+```{python}
+films3 = films.dropna(axis=1)
+print(films.shape)
+print(films3.shape)
+```
+
+Als je je afvraagt waar die `axis=1` vandaan komt, kijk dan nog eens naar de uitkomst van `films.shape`. Dit is `(1000,11)`. Dat wil zeggen, het gaat om een dataframe met 1000 rijen en 11 kolommen. De rijen hebben index 0 en de kolommen index 1. Dit is waarom als je `axis=1` gebruikt de functie alleen voor de kolommen werkt.
+
+Als je niets invult dan gebruikt `drop.na` de `axis=0`, vandaar dat je in het vorige voorbeeld niets hoefde in te vullen. Zie voor meer informatie de [help pagina](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.isnull.html).
+
+**Imputatie** is ook een veel gebruikte optie. Hiermee vervang je de missende waarden voor een schatting van de waarde. Dit kan bijvoorbeeld het gemiddelde of de mediaan van de kolom zijn. Het grote voordeel is dat je geen waardevolle gegevens weggooit.
+
+Laten we eens proberen de missende waarden in de kolom revenue\_millions te vervangen. We schrijven de waarden uit deze kolom eerst naar een nieuwe variabele. De algemene manier om kolommen te selecteren in een dataframe is met vierkante haakjes waarbinnen de namen van de te selecteren kolommen worden gegeven.
+
+```{python}
+revenue = films["revenue_millions"]
+```
+
+De variabele revenue is een *Series*. We kunnen hier net als bij een dataframe de eerste paar waarden printen.
+
+```{python}
+revenue.head(4)
+```
+
+Stel we willen de missende waarden vervangen door het gemiddelde van de kolom. We moeten dan eerste het gemiddelde uitrekenen. Pandas heeft voor veel standaardberekeningen een functie. In dit geval is dat niet geheel verrassend de methode `mean`. We kunnen de uitkomst daarvan gebruiken om alle missende waarden te vervangen. We doen dit met de methode `fillna`.
+
+```{python}
+revenue_mean = revenue.mean()
+revenue_filled = revenue.fillna(revenue_mean)
+films['revenue_millions'] =  revenue_filled
+```
+
+Dus, wat hebben we gedaan? We hebben...
+
+1.  twee stappen terug de waarden uit de kolom *revenue\_millions* uit de dataframe *films* weggeschreven als een nieuwe dataseries *revenues*.
+2.  het gemiddelde van de waarden in de dataseries *revenues* uitgerekend.
+3.  de waarden van de dataseries *revenues* weggeschreven naar een nieuwe dataseries *revenue\_filled*, waarbij we alle missende waarden hebben vervangen door het gemiddelde van de waarden in *revenues*.
+4.  de waarden uit de kolom *revenue\_millions* van het dataframe *films* vervangen door de waarden in de *revenue\_filled* dataseries.
+
+Nu kunnen we vervolgens controleren of de *revenue\_millions* van het dataframe *films* inderdaad geen missende waarden meer bevat.
+
+```{exercise}
+Controleer of de kolom 'revenue\_millions' inderdaad geen missende waarden meer heeft.
+```
+
+```{python, eval=F, echo=F}
+films.isnull().sum()
+```
+
+```{exercise}
+Vervang de missende waarden uit de kolom *metascore* door de mediaan uit die kolom. De methode om de mediaan uit te rekenen is `median`.
+```
+
+```{python, eval=F, echo=F}
+metascore = films['metascore']
+metascore_median = metascore.median()
+films['metascore'] = metascore.fillna(metascore_median)
+films.isnull().sum()
+```
+
+Imputatie van een gehele kolom is misschien niet de beste methode. Je zou bijvoorbeeld ook het gemiddelde per film director kunnen berekenen, en per director de missende waarden (als die er zijn) vervangen voor het gemiddelde voor die directeur. Maar dat is iets voor later.
+
+Voor de volgende opdrachten heb je bestand [bevolking.csv](Data/bevolking.csv) nodig. Download deze en kopieer deze naar de 'Data' sub-folder in je github folder. Importeer deze vervolgens als dataframe in Python en noem deze *bevolking*.
+
+```{exercise}
+Controleer of er missende waarden zijn in de *bevolking* dataframe. Als er missende waarden voorkomen, beslis dan of je de waarden verwijderd (en hoe) of dat je imputatie gebruikt om de missende waarden te vervangen. Zorg dat je elke stap goed documenteert / beschrijft.
+```
+
+```{python, eval=F, echo=F}
+# Lees data in
+bevolking = pd.read_csv("data/bevolking.csv")
+print(bevolking.columns)
+```
+
+```{python, eval=F, echo=F}
+# Controleer per kolom of er missende waarden zijn
+bevolking.isnull().sum()
+```
+
+```{python, eval=F, echo=F}
+# Vervang de missesnde waarden in de kolom AANT_MAN
+inw = bevolking['AANT_MAN']
+inw_med = inw.median()
+bevolking['AANT_MAN'] = inw.fillna(inw_med)
+bevolking.isnull().sum()
+```
+
+```{python, eval=F, echo=F}
+# verwijder rijen waar de provincienamen ontbreken
+print(bevolking.shape)
+bevolking.dropna(inplace=True)
+print(bevolking.isnull().sum())
+print(bevolking.shape)
+```
+
+## Statistieken & grafieken {#idoiKr8nr8C}
+
+### Beschrijvende statistiek je data {#id1Aj62342isp}
+
+Je hebt hierboven gezien hoe je zekere statistieken kunt berekenen per kolom, zoals het gemiddelde en de mediaan. Met de methode `describe` kun je in een keer een beschrijving van de verdeling van de continue variabelen uitprinten, inclusief het aantal waarnemingen (aantal rijen), het gemiddelde, standaarddeviatie, minimum en maximum en de 1ste, 2de en 3de kwartiel.
+
+```{python}
+films.describe()
+```
+
+Je kunt ook statistiek van categorische variabelen uitprinten, inclusief het aantal rijen, aantal unieke categorieën, en de frequentie van de categorie met de meeste waarden. In de code hieronder selecteren we de kolom 'genre' en printen hiervan de statistieken uit.
+
+```{python}
+films['genre'].describe()
+```
+
+Je kunt ook meerdere kolommen selecteren. Hiervoor geef je een lijst met de kolomnamen (ter herinnering, je maakt een lijst door de elementen tussen rechte haken te zetten).
+
+```{python}
+films[['genre', 'director']].describe()
+```
+
+Je kunt ook eenvoudig de correlatie tussen de continue variabelen uitrekenen met de methode `corr`. Met deze functies worden, zoals je kunt zien, alle kolommen met niet numerieke data genegeerd. Je weet als het goed is hoe je de waarden in de tabel hieronder moet interpreteren. Zo niet, kijk dan nog eens terug naar het lesmateriaal van de statistieklessen.
+
+```{python}
+films.corr()
+```
+
+### Rekenen met waarden {#id1231242isp}
+
+Je hebt in paragraaf \@ref(id6iTLyYwmD) al gelezen hoe je met waarden in Python kunt rekenen. We kunnen dit ook toepassen op de waarden in de kolommen van een dataframe. Stel bijvoorbeeld je wilt de waarden in de kolom *metascore* van de dataframe *films* uit paragraaf \@ref(idI9APy93fu) met 10 vermenigvuldigen.
+
+```{python}
+films["metascore10"] = films["metascore"] * 10
+films[['metascore', 'metascore10']].head(4)
+```
+
+Als de kolom *metascore10* al bestaat dan worden de waarden in die kolom vervangen door de nieuw berekende waarden. Zoniet, dan wordt er een nieuwe kolom gecreeërd aan het einde van de tabel.
+
+Voor functies die in Pandas niet bestaan kunnen we ook functies van de library *numpy* gebruiken, zoals we al eerder in paragraaf \@ref(id6iTLyYwmD) hebben gezien. Stel we willen een nieuwe kolom creëren met de wortel van *metascore*.
+
+```{python}
+films['metascore_sqrt'] = np.sqrt(films["metascore"])
+films[['metascore', 'metascore_sqrt']].head(4)
+```
+
+### Data plotten {#id1Aj642isp}
+
+Je kunt je data ook plotten. Zie hieronder bijvoorbeeld hoe je een eenvoudige boxplot en scatterplots maakt met behulp van de functies `boxplot` en `scatter` uit de sub-module *pyplot* van de *matplotlib* module. Omdat we bijvoorbeeld niet steeds `matplotlib.pyplot.scatter` willen uitschrijven steeds als we een scatterplot maken, importeren we de sub-module met als alias *plt*. Om er zeker van te zijn dat er geen figuren openstaan gebruiken we eerst de functie `close` om alle mogelijk openstaande plots te sluiten.
+
+```{python, warning=F, message=F}
+import matplotlib.pyplot as plt
+plt.close("al")
+```
+
+We kunnen nu een boxplot maken met de functie `boxplot`. Als input geeft de kolom met de waarde waarmee je deze boxplot wilt maken. Met het argument `vert=False` wordt aangegeven dat de boxplot horizontaal geplot moet worden.
+
+```{python, warning=F, message=F}
+plt.boxplot(films['rating'], vert=False)
+plt.show()
+```
+
+We kunnen op dezelfde manier een scatterplot maken met de functie `scatter`.
+
+```{python, warning=F, message=F}
+plt.scatter(x=films['metascore'], y=films['rank'])
+plt.show()
+```
+
+### Oefening
+
+Laten we nu eens kijken in hoeverre je de stof uit bovenstaande paragraaf zelf kunt toepassen. Je hebt hiervoor de data [bevolking.csv](Data/bevolking.csv) nodig. Download deze naar je folder met data files. Importeer de csv file bevolking.csv en geef de dataframe de naam *bevolking*.
+
+```{exercise}
+De tabel heeft een kolom met een heel lange naam, 'Gemeenten alfabetisch 2019\_Provincienaam'. Vervang deze door de naam 'provincie'
+```
+
+```{python, echo=F, eval=F}
+# Importeer library
+import pandas as pd
+import numpy as np
+
+# Importeer data
+bevolking = pd.read_csv("data/bevolking.csv")
+print(bevolking.columns)
+
+# Vervang kolomnaam
+bevolking.rename(columns = {
+    'Gemeenten alfabetisch 2019_Provincienaam':'provincie'},
+                  inplace=True)
+```
+
+```{exercise}
+Bereken het 25ste, 50ste en 75ste kwantiel van het aantal inwoners. Gebruik hiervoor de methode `quantile` uit de Pandas module voor.
+```
+
+```{python, echo=F, eval=F}
+# Bereken kwantielen
+print(bevolking['AANT_INW'].quantile((0.25,0.50,0.75)))
+```
+
+```{exercise}
+Maak een histogram van de verdeling van het aantal inwoners. Zoek zelf op welke functie je hiervoor kunt gebruiken.
+```
+
+```{python, echo=F, eval=F}
+# Met Pandas hist functie
+#myhist = bevolking[['AANT_INW']].hist()
+plt.show(myhist)
+
+# Met matplotlib hist functie
+myhist2 = plt.hist(x=bevolking['AANT_INW'])
+plt.show(myhist2)
+```
+
+```{exercise}
+Maak een boxplot met de verdeling van het aantal inwoners per provincie. Je kunt hier de functie `boxplot` uit de matplotlib module voor gebruiken. Zorg dat de uitschieters niet getoond worden.
+```
+
+```{python, echo=F, eval=F}
+# Print boxplot
+plt.boxplot(x=bevolking['AANT_INW'], showfliers=False)
+plt.show()
+```
+
+Het wordt interessanter als je de verdeling per provincie kunt plotten. Om dit met bovenstaande functie te doen is vrij ingewikkeld. Gelukkig heeft de Pandas module een methode `boxplots`. Met deze methode kun je met het argument *by* aangeven dat je de data per categorie uit een kolom wilt plotten.
+
+```{exercise}
+Maak een boxplot met de verdeling van het aantal inwoners per provincie.
+```
+
+```{python, echo=F, eval=F}
+# Print without the extreme values
+bevolking[['AANT_INW', 'provincie']].boxplot(by = 'provincie', 
+  showfliers=False, vert=False)
+plt.show()
+
+```
+
+## Werken met indexen {#idF7Brtn7UB}
+
+Er zijn honderden methoden en functies die belangrijk zijn voor je analyse. We hebben al een aantal gezien waarmee je een tabel kunt inspecteren. We zullen hieronder een aantal andere functies leren kennen waarmee we data verder kunnen inspecteren en transformeren. We gebruiken hier de tabel [IMDB-Movie-Data.csv](Data/IMDB-Movie-Data.csv) voor. Download het bestand naar je github folder (bijv. naar de sub-folder 'Data'). Lees de waarden vervolgens in.
+
+```{python}
+films = pd.read_csv("data/IMDB-Movie-Data.csv")
+films.head(2)
+```
+
+> **Let op** De tabel is erg breed, en past dan ook niet op deze webpagina. Daarom worden alleen de eerste en laatste paar kolommen geprint. De kolom met `...` dient daarbij ter vervanging van de weggelaten kolommen. Onderaan kun je zien hoeveel kolommen er werkelijk zijn.
+>
+> Als je zelf de code uitvoert in Visual Studio Code krijg je wel gewoon de hele tabel te zien. Of je kunt deze in de Variabele Explorer openen (zie paragraaf \@ref(idUQ5TzfQmF)).
+
+We kunnen ook met het argument *index\_col* aangeven dat we de tabel willen indexeren op de kolom 'Title'. Vergelijk onderstaande resultaat nu met bovenstaande. Je ziet dat de kolom 'Title' hieronder als index wordt gebruikt.
+
+```{python}
+films = pd.read_csv("data/IMDB-Movie-Data.csv", index_col="Title")
+print(films.head(2))
+```
+
+Dat betekent dat het geen kolom meer is, en dat de waarden onder titel ook niet meer als een normale kolom beschikbaar zijn. Dit kun je controleren door de namen van de kolommen uit te printen. Dit doe je met de methode `columns`. Zoals je ziet heeft deze methode geen parameters, dus ook geen haakjes.
+
+```{python}
+films.columns
+```
+
+Dus, we hebben de kolom 'Title uit de tabel gebruikt als index. Het moge duidelijk zijn dat de index in feite de rijnamen bevat. Welke dit zijn kun je vervolgens achterhalen met de methode `index`.
+
+```{python}
+films.index
+```
+
+We kunnen de index bijvoorbeeld gebruiken om rijen te selecteren op rij naam. We doen dit met de methode `loc` (dit staat voor location). Selecteer bijvoorbeeld de rij met informatie over de film 'Split'.
+
+```{python}
+films.loc['Split']
+```
+
+Zoals je ziet geef je bij deze methode als argument de index naam, of namen, die we willen selecteren. Nu kun je ook rijen selecteren gebaseerd op de waarden in een kolom. Dus waar dient die index dan voor? Met een index werkt het selecteren van data veel sneller. Dit maakt met kleine datasets niet heel veel uit, maar bij grote datasets wordt de tijd die je er mee wint wel belangrijk. In paragraaf \@ref(idTZjXg9p6T) worden er meer voorbeelden getoond van hoe je data kunt selecteren.
+
+Het is ook mogelijk om de index te resetten. Bijvoorbeeld als je alsnog een kolom met de titels wilt hebben. Je kunt dit doen met de methode `reset_index`.
+
+```{python}
+films2 = films.reset_index(inplace=False)
+films2.head(2)
+```
+
+Wat hierboven gebeurd is dat de waarden in de index naar een kolom (terug) worden geplaatst. Als index wordt dan de standaard getallenreeks van 0 tot het aantal rijen gebruikt. Met het argument `inplace=TRUE` kun je aangeven dat de tabel zelf wordt aangepast. Bij `inplace=False` wordt er een nieuw dataframe gemaakt, die hierboven als *films2* wordt weggeschreven.
+
+## Selecteren en filteren {#idTZjXg9p6T}
+
+Voor bijna elke analyse zul je op een gegeven moment sub-sets van je data moeten selecteren. In pandas is het redelijk eenvoudig om data te selecteren en extraheren. Als je hier meer over wilt opzoeken zoek dan op de zoektermen 'slicing', 'selecting' en 'extracting'.
+
+Het is belangrijk te realiseren dat al zijn de functies en methoden om data te selecteren hetzelfde voor dataframes en series, de manier waarop je de functies toepast zijn soms verschillend. Je moet dus altijd goed in de gaten hebben om wat voor data het gaat.
+
+### Selecteren van kolommen {#id9ODHxdt7N}
+
+Je hebt al gezien hoe je een kolom kunt extraheren met behulp van vierkante haken. Je geeft daarbij tussen de vierkante haken de naam van de kolom(men) die je wilt extraheren. Vul je een kolomnaam in, dan is het resutlaat een Data Series. Je kunt dit controleren met de functie `type`. Deze geeft aan wat voor type object iets is.
+
+```{python}
+films_metascore = films['Metascore']
+type(films_metascore)
+```
+
+Om een (of meerdere) kolommen te extraheren als dataframe moet je een lijst met kolomnamen als input geven. Ook dit hebben we al eerder gezien.
+
+```{python}
+films_metascore = films[['Metascore']]
+type(films_metascore)
+```
+
+Dus let op, hierboven wordt weliswaar slechts een kolomnaam gegeven, maar omdat deze als lijst wordt gegeven (dus zelf ook door vierkante haken omgeven) is het resultaat een dataframe.
+
+### Selecteren van rijen {#idE8b5YxN5s}
+
+We gaan weer verder met de film database. Laten we deze voor de zekerheid nog een keer importeren.
+
+```{python}
+prom = films.loc[["Prometheus"]]
+prom
+```
+
+Om rijen te selecteren hebben we twee opties, namelijk:
+
+-   .loc - locates by name
+-   .iloc- locates by numerical index
+
+In beide gevallen selecteer je op de index (zie paragraaf \@ref(idF7Brtn7UB)). In dit geval is de tabel geïndexeerd bij 'Title'. Dus je kunt een rij selecteren door als input de title van een film te geven.
+
+```{python}
+prom = films.loc[["Prometheus"]]
+prom
+```
+
+We hebben hierboven als input een lijst gebruikt (['Prometheus']). Dus de uitkomst is een dataframe. Als we als input alleen de naam hadden gebruikt (dus, \`films.loc["Prometheus"]) dan hadden we een dataseries teruggekregen. Probeer maar eens uit.
+
+Als je op rijnummer wilt selecteren gebruik je de `iloc` methode. Hieronder wordt bijvoorbeeld de vijfde rij uit het dataframe geselecteerd.
+
+```{python}
+prom = films.iloc[4]
+prom
+```
+
+```{exercise}
+Hierboven hebben we als input een getal gebruik, dus krijgen we een dataseries als uitkomst. Herhaal bovenstaande, maar zorg dat de uitkomst een dataframe is in plaats van een dataseries.
+```
+
+En als we nu meerdere rijen willen selecteren? Je doet dit op zelfde manier als dat je in standaard Python code elementen uit een lijst selecteert. Hier selecteren we de rijen met als index 'Prometheus' en 'Sing'. Toevallig komen beiden maar een keer voor.
+
+```{python}
+films_selectie = films.loc[['Prometheus', 'Sing']]
+films_selectie
+```
+
+Je kunt hiervoor ook `iloc` gebruiken. We gebruiken in dit geval een reeks (de eerste tot vierde element uit de index). Deze wordt automatisch omgezet in een lijst (hier naar de lijst [1,2,3,4]). We hoeven daarom hier geen dubbele haken te geven.
+
+```{python}
+films_selectie = films.iloc[1:4]
+films_selectie
+```
+
+Let op, wanneer je met `iloc` een reeks 1:4 selecteert, krijg je de rijen 0:3 terwijl rij 4 niet meegenomen wordt. De `iloc` functie volgt hiermee dezelfde regel als wanneer je data uit een lijst selecteert (zie paragraaf \@ref(idOC8isTMey)).
+
+### Conditionele selectie
+
+Wat als we een conditionele selectie willen maken? We hebben al voorbeelden gezien hoe we een selectie uit een lijst kunnen maken gebaseerd op zekere voorwaarden. Bijvoorbeeld, wat als we alleen de films willen laten zien door director Ridley Scott, of films met een rating groter of gelijk aan 8,0? Om dit te doen nemen we de betreffende kolommen en passen daar een boolean conditie op toe. Let op het dubbele `==` teken.
+
+```{python}
+condition = (films['Director'] == "Ridley Scott")
+condition.head()
+```
+
+Net als bij de methode `isull` (in paragraaf \@ref(idZusSrAPvJ)) geeft dit een reeks van True en False: True voor films geregisseerd door Ridley Scott en False voor films die niet door hem geregisseerd zijn. Je ziet verder dat deze dataseries dezelfde index heeft als de dataframe *films*. In andere woorden, de uitkomst behoudt de index.
+
+We willen nu alle films die niet door Ridley Scott geregisseerd zijn er uit filteren. Om de rijen terug te krijgen waar die voorwaarde waar is, moeten we deze operatie invoeren in het dataframe:
+
+```{python}
+films[condition]
+```
+
+Dus, de dataseries *conditions* geeft per rij uit de dataframe *films* met True en False aan of de rij wel of niet moet worden meegenomen. We hadden de twee stukken code natuurlijk ook in een keer kunnen opschrijven.
+
+```{python, eval=F}
+films[films['Director'] == "Ridley Scott"]
+```
+
+Laten we nu eens de films met een rating groter of gelijk aan 8 eruit filteren.
+
+```{python}
+films[films['Rating'] >= 8]
+```
+
+We kunnen deze twee voorwaarden combineren, door alleen die rijen mee te nemen als ze aan beide voorwaarden voldoen (&) of aan een van beide voorwaarden (\|).
+
+```{python}
+films[(films['Director'] == 'Christopher Nolan') & (films['Rating'] >= 8)]
+```
+
+Je kunt ook meerdere voorwaarden, mits ze over dezelfde kolom gaan, combineren met de `isin` methode.
+
+```{python}
+films[films['Director'].isin(['Christopher Nolan', 'Ridley Scott'])]
+```
+
+```{exercise}
+Bereken het percentage van de films met als director Christopher Nolan of Adam McKay en met inkomsten van meer dan 400 miljoen. Zie het code block hieronder voor aanwijzingen.
+```
+
+```{python, eval=F}
+# Maak een dataframe met films of Nolan of McKay als directeur
+A = films[vull_hier_in_wat_je_wilt_filteren]
+     
+# Maak een dataframe met of Nolan of McKay als directeur, en een revenu van meer
+# dan 400 miljoen
+B = films[vull_hier_in_wat_je_wilt_filteren]
+     
+# Bereken percentage door het aantal rijen van B te delen door het aantal rijen
+# van A, en de uitkomst hiervan te vermenigvuldigen met 100
+
+
+```
+
+```{python, eval=F, echo=F}
+# Filter de data uit
+A = films[(films['Director'] == 'Christopher Nolan') 
+     | (films['Director'] == 'Adam McKay')]
+B = films[((films['Director'] == 'Christopher Nolan') 
+     | (films['Director'] == 'Adam McKay')) 
+     & (films['Revenue (Millions)'] > 400)]
+C = B.shape[0] / A.shape[0] * 100
+print(round(C, 2), "%")
+```
+
+## Combineren van data {#idbvwtwUAjV}
+
+Bij data analyse komt het vaak voor dat je verschillende tabellen moet combineren. Dit kan handmatig, in een SQL database, maar ook met Pandas. Er zijn verschillend manieren in Pandas om dataframes of series met elkaar te combineren. Welke je moet gebruiken zal afhangen van hoe je data er uit ziet en wat en hoe je deze wilt combineren.
+
+### Onder elkaar zetten van tabellen
+
+Een van de functies om dataframes samen te voegen is de functie concat(). Laten we met een simpel voorbeeld beginnen. De voorbeelden komen uit deze handleiding. Stel we hebben drie dataframes met dezelfde kolommen. We willen deze nu samenvoegen zoals in onderstaande illustratie.
+
+
+```{r id2WJQKGWVa, results='asis', fig.cap="Drie tabellen onder elkaar 'plakken'", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_concat_basic.png', dpi=100)
+```
+
+Laten we eerst de drie dataframe creëren. Dit zijn dezelfde tabellen als in het figuur hierboven.
+
+```{python}
+df1 = pd.DataFrame({'A': ['A0', 'A1', 'A2', 'A3'],
+                    'B': ['B0', 'B1', 'B2', 'B3'],
+                    'C': ['C0', 'C1', 'C2', 'C3'],
+                    'D': ['D0', 'D1', 'D2', 'D3']},
+                    index=[0, 1, 2, 3])
+df2 = pd.DataFrame({'A': ['A4', 'A5', 'A6', 'A7'],
+                    'B': ['B4', 'B5', 'B6', 'B7'],
+                    'C': ['C4', 'C5', 'C6', 'C7'],
+                    'D': ['D4', 'D5', 'D6', 'D7']},
+                   index=[4, 5, 6, 7])
+df3 = pd.DataFrame({'A': ['A8', 'A9', 'A10', 'A11'],
+                    'B': ['B8', 'B9', 'B10', 'B11'],
+                    'C': ['C8', 'C9', 'C10', 'C11'],
+                    'D': ['D8', 'D9', 'D10', 'D11']},
+                   index=[8, 9, 10, 11])
+```
+
+Ze hebben alle drie dezelfde kolommen. Je zou ze daarom zo onder elkaar kunnen plakken in Excel. Met Panda's is dat net zo eenvoudig, je gebruikt de methode `concat()` met als input een lijst met de dataframes die je onder elkaar wilt 'plakken'. Het argument `axis=0` geeft aan dat je de rijen van de dataframes wilt combineren (onder elkaar wilt zetten).
+
+```{python}
+frames = [df1, df2, df3]
+dfconcat = pd.concat(frames, axis=0)
+print(dfconcat)
+```
+
+Dit was een simpel voorbeeld van een handeling die je misschien net zo makkelijk kunnen doen in Excel. Maar je kunt nog veel meer met deze functie. De verschillende argumenten voor deze functie zijn:
+
+    pd.concat(objs, axis=0, join='outer', ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+
+De betekenis van de verschillende argumenten kun je vinden in de [help pagina van concat](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.concat.html). Maar laten we een aantal opties illustreren.
+
+```{python}
+df4 = pd.DataFrame({'B': ['B2', 'B3', 'B6', 'B7'],
+                    'D': ['D2', 'D3', 'D6', 'D7'],
+                    'F': ['F2', 'F3', 'F6', 'F7']},
+                   index=[2, 3, 6, 7])
+df4
+```
+
+```{python}
+result = pd.concat([df1, df4], axis=0, sort=False)
+result
+```
+
+Stel we hebben twee tabellen met overlappende indexen, en je wilt deze onder elkaar plakken.
+
+```{python}
+df3 = pd.DataFrame({'A': ['A8', 'A9', 'A10', 'A11'],
+                    'B': ['B8', 'B9', 'B10', 'B11'],
+                    'C': ['C8', 'C9', 'C10', 'C11'],
+                    'D': ['D8', 'D9', 'D10', 'D11']},
+                   index=[1, 2, 3, 4])
+result = pd.concat([df1, df3], axis=0)
+result
+```
+
+We hebben nu een index met overlappende nummers. Dit kan, maar als de oorspronkelijke indexen van df1 en df3 geen betekenis hebben, dan kunnen we de index resetten.
+
+```{python}
+result.reset_index(inplace=True)
+print(result)
+```
+
+En als je later nu wilt weten uit welke tabel een rij van oorsprong komt? Hiervoor kunnen we het `keys` argument gebruiken. Met dit argument kun je een (extra) index toekennen aan iedere tabel. Je kunt dit voor jezelf visualiseren als een extra kolom met voor iedere rij de index ID van de oorspronkelijke input tabel.
+
+```{python}
+result = pd.concat([df1, df2, df3], keys=['x', 'y', 'z'])
+print(result)
+```
+
+Hiermee geef je dus aan dat de index ID van de rijen die uit de eerste tabel komen een 'x' is, de rijen uit de tweede tabel krijgen een index ID 'y', en de rijen uit de derde tabel een 'z'. Dit kun je vervolgens gebruiken om met de functie loc() alle rijen te selecteren die van oorsprong uit de tweede tabel komen.
+
+```{python}
+result.loc['y']
+```
+
+### Naast elkaar plakken van tabellen
+
+Je kunt tabellen ook naast elkaar plakken. Je zou dit kunnen doen met dezelfde `concat` functie en het argument `axis=1`. Maar, we zullen hieronder naar de meer veelzijdige functie `merge` kijken. Deze functie biedt dezelfde mogelijkheden om tabellen bij elkaar te voegen die je ook in databases ziet. De syntax van deze functie ziet er als volgt uit:
+
+    pd.merge(left, right, how='inner', on=None, left_on=None, right_on=None,
+             left_index=False, right_index=False, sort=True,
+             suffixes=('_x', '_y'), copy=True, indicator=False,
+             validate=None)
+
+Meer informatie over de argumenten kun je in de [handleiding](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.merge.html) vinden. En [deze tutorial](https://www.shanelynn.ie/merge-join-dataframes-python-pandas-index-1/) geeft meer informatie en voorbeelden hoe je deze functie kunt toepassen.
+
+De 'key' waarmee je twee tabellen (of meer) linkt kan een (of meerdere) kolommen zijn, of de index. Hieronder een voorbeeld waarbij de kolom 'key', die in beide tabellen voorkomt, gebruikt wordt om de tabellen te linken.
+
+```{r idfvKxqyj2A, results='asis', fig.cap="Samenvoegen gebaseerd op een 'key' kolommen in beide tabellen", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_merge_on_key.png', dpi=100)
+```
+
+```{python}
+left = pd.DataFrame({'key': ['K0', 'K1', 'K2', 'K3'],
+                     'A': ['A0', 'A1', 'A2', 'A3'],
+                     'B': ['B0', 'B1', 'B2', 'B3']})
+print(left)
+```
+
+```{python}
+right = pd.DataFrame({'key': ['K0', 'K1', 'K2', 'K3'],
+                      'C': ['C0', 'C1', 'C2', 'C3'],
+                      'D': ['D0', 'D1', 'D2', 'D3']})
+
+print(right)
+```
+
+```{python}
+result = pd.merge(left, right, on='key')
+result
+```
+
+Het is iets ingewikkelder als er meerdere keys zijn. Alleen de keys die overeenkomen in beide kolommen worden meegenomen. Dit is omdat standaard de optie `how=inner` wordt gebruikt.
+
+```{r idxY54IcKTw, results='asis', fig.cap="Een inner-join gebaseerd op de waarden in twee 'key' kolommen.", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_merge_on_key_multiple.png', dpi=100)
+```
+
+```{python}
+left = pd.DataFrame({'key1': ['K0', 'K0', 'K1', 'K2'],
+                     'key2': ['K0', 'K1', 'K0', 'K1'],
+                     'A': ['A0', 'A1', 'A2', 'A3'],
+                     'B': ['B0', 'B1', 'B2', 'B3']})
+left                     
+```
+
+```{python}
+right = pd.DataFrame({'key1': ['K0', 'K1', 'K1', 'K2'],
+                      'key2': ['K0', 'K0', 'K0', 'K0'],
+                      'C': ['C0', 'C1', 'C2', 'C3'],
+                      'D': ['D0', 'D1', 'D2', 'D3']})
+right                      
+```
+
+```{python}
+result = pd.merge(left, right, on=['key1', 'key2'])
+result
+```
+
+Het argument `how` geeft aan hoe de tabellen worden gecombineerd. Als een key combinatie niet in de linker of rechter tabel voorkomt, dan worden de waarden in de gecombineerde tabel NA. Met het argument `on` geef je aan welke kolommen je wilt gebruiken om de tabellen te combineren.
+
+| Merge method | SQL Join Name    | Description                               |
+|--------------|------------------|-------------------------------------------|
+| left         | LEFT OUTER JOIN  | Use keys from left frame only             |
+| right        | RIGHT OUTER JOIN | Use keys from right frame only            |
+| outer        | FULL OUTER JOIN  | Use union of keys from both frames        |
+| inner        | NNER JOIN        | Use intersection of keys from both frames |
+
+Neem bijvoorbeeld de `left` optie hieronder.
+
+```{r idOAvYOkfo7, results='asis', fig.cap="Een left-join gebaseerd op twee key kolommen.", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_merge_on_key_left.png', dpi=100)
+```
+
+```{python}
+result = pd.merge(left, right, how='left', on=['key1', 'key2'])
+result
+```
+
+En de `right` optie
+
+```{r idwX98TrcO4, results='asis', fig.cap="Een right-join gebaseerd op twee key kolommen.", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_merge_on_key_right.png', dpi=100)
+```
+
+```{python}
+result = pd.merge(left, right, how='right', on=['key1', 'key2'])
+result
+```
+
+En de `outer` optie
+
+```{r idEzAWKxPva, results='asis', fig.cap="Een outer-join gebaseerd op twee key kolommen.", eval=TRUE, echo=FALSE}
+knitr::include_graphics('images/merging_merge_on_key_outer.png', dpi=100)
+```
+
+```{python}
+result = pd.merge(left, right, how='outer', on=['key1', 'key2'])
+result
+```
+
+Als laatste kun je ook op de index mergen. Hiervoor gebruik je de argumenten `left_index=True` en `right_index=True`. Verder werkt dit hetzelfde als dat je merged op kolommen.
+
+```{python}
+left = pd.DataFrame({'A': ['A0', 'A1', 'A2'],
+                     'B': ['B0', 'B1', 'B2']},
+                    index=['K0', 'K1', 'K2']) 
+print(left)
+```
+
+```{python}
+right = pd.DataFrame({'C': ['C0', 'C2', 'C3'],
+                      'D': ['D0', 'D2', 'D3']},
+                     index=['K0', 'K2', 'K3'])
+print(right)
+```
+
+```{python}
+result = pd.merge(left, right, left_index=True, right_index=True, how='outer')
+print(result)
+```
+
+### Oefening
+
+De opdracht hieronder doe je met de resultaten van vorig jaar. Natuurlijk is dit meteen mooie oefening die je kunt gebruiken om ook je eigen data te combineren. Download voor de opdracht de tabellen [Boorcoordinaten.xlsx](Data/Boorcoordinaten.xlsx), [Labgegevens.xlsx](Data/Labgegevens.xlsx) en [Veldgegevens.xlsx](Data/Veldgegevens.xlsx) en importeer deze in Python als dataframes.
+
+```{exercise}
+Combineer de drie dataframe in een tabel. Wees hier slim in, controleer hoe in hoeverre rijen en kolommen overeenkomen, combineer eerst de tabellen die makkelijk te combineren zijn.
+
+Om je te helpen hieronder een aantal stappen die je hier bij kunt volgen:
+
+-   Importeer de tabellen. We willen de tabellen uiteindelijk combineren met als 'key' het boornummer. Zet deze daarom als index.
+-   Controleer wat de 'shapes' zijn van de tabellen en de kolomnamen.
+-   Voeg de tabellen met dezelfde kolommen samen
+-   Combineer de tabel die je hierboven hebt gemaakt met de resterende tabel. Gebruik hiervoor een left\_join. Dat wil zeggen, alle rijen uit de linkertabel (tabel met coördinaten) worden meegenomen, en alle rijen uit de rechtertabel (velwerkgegevens) met een index die ook in de linkertabel voorkomt.
+-   Exporteer de tabel als een excel file en bekijk deze
+```
+
+```{python, eval=F, echo=F}
+# Import de tabellen
+df1 = pd.read_excel("Data/Boorcoordinaten.xlsx")
+df2 = pd.read_excel("Data/Labgegevens.xlsx")
+df3 = pd.read_excel("Data/Veldgegevens.xlsx")
+
+# Get name of columns
+df1.columns
+df2.columns
+df3.columns
+
+# Get name of columns
+df1.shape
+df2.shape
+df3.shape
+
+# Voeg eerste twee tabellen samen (Beiden hebben een rij per boorlocatie)
+df4 = pd.merge(df1, df2, on = ['Boornummer', 'Boornummer'])
+# Of, korter (dit kan omdat de kolommen waarop je joined dezelfde naam hebben)
+df4 = pd.merge(df1, df2, on = 'Boornummer')
+
+# We willen een tabel met eerst de kolommen met plotgegevens (uit df4) en dan
+# de bijbehorende regels met boorgegevens uit df3. Daarbij geldt:
+# - De df3 tabel geeft de metingen per locatie én diepte. Er zijn dus meerdere
+#   metingen per boorlocatie. 
+# - We willen alle rijen uit df3 behouden. We gebruiken een righ_join. Hiermee
+#   vertellen we Pandas dat alle rijen uit de tweede tabe in de merge functie
+#   behouden blijven, en de bijbehorende rijen uit de eerste tabel (hier df3) 
+#   in de merge functie (hier df4) worden gelinkt.
+df5 = pd.merge(df4, df3, how='right', on='Boornummer')
+# Controleer nu zelf of de resultaten kloppen (kijk naar het aantal rijen, 
+# en de inhoudt)
+```
+
+## Aggregatie van tabellen {#aggregatie}
+
+Een belangrijke stap in het verwerken van data is data aggregatie en het veranderen van hoe je data in een dataframe is georganiseerd. Dat laatste is bijvoorbeeld vaak nodig omdat elk analyse programma weer bepaalde verwachtingen heeft over hoe je data is georganiseerd. 
+
+Een voorbeeld is het gebruik van de functie `groupby`. Normaal kun je voor een dataframe bijvoorbeeld het gemiddelde per kolom als volgt uitrekenen (ik gebruik hier weer de tabel met informatie over landbouwbedrijven uit paragraaf \@ref(idUQ5TzfQmF). Hieronder wordt het gemiddeld voor kolom _Aantal_ (deze kolom geeft het aantal bedrijven per periode).
+
+```{python, warning=F, error=F}
+landbouwbedrijven = pd.read_csv('Data/LandbouwbedrijvenNederland.csv', sep=",")
+n = landbouwbedrijven['Aantal'].mean()
+"Het gemiddeld aantal bedrijven is {}".format(round(n, 1))
+```
+Maar er staan verschillende type bedrijven in de tabel. Wat als we nu per type landbouwbedrijf het gemiddeld aantal bedrijven wil uitrekenen? Laten we eerst kijken welke type bedrijven er eigenlijk zijn. We doen dit met de methode `unique()`.
+
+```{python, warning=F, error=F}
+landbouwbedrijven['Bedrijfstypen'].unique()
+```
+OK, we willen dus per type het gemiddeld aantal bedrijven over de periode 2000-2018. We gebruiken hiervoor de methode `groupby`. Alles wat deze functie doet is Python/Pandas vertellen dat alle functies per groep uitgevoerd moeten worden in plaats van op de hele kolom.
+
+```{python, warning=F, error=F}
+landbouwbedrijven.groupby('Bedrijfstypen')['Aantal'].mean()
+```
+Wat gebeurd hier? Eerst vertellen we met de methode `groupby` aan Pandas dat we iets willen uitrekenen per type bedrijf. Vervolgens selecteren we de kolom _Aantal_ en berekenen we daarvan het gemiddelde met de functie `mean()`. De uitkomst is het gemiddeld aantal bedrijven per type bedrijf.
+
+We kunnen zo ook het aantal rijen per groep bepalen met de methode `size`.
+
+```{python, warning=F, error=F}
+landbouwbedrijven.groupby('Bedrijfstypen')['Aantal'].size()
+```
+
+En als we meerdere statistieken tegelijkertijd willen uitrekenen kunnen we ook de methode `agg` gebruiken. 
+
+```{python, echo=T, eval=T, warning=F, error=F, message=F}
+landbouwbedrijven.groupby('Bedrijfstypen')['Aantal'].agg(['median', 'count'])
+```
+Wil je meer weten over hoe je data in een tabel kunt aggregeren, lees dan het hoofdstuk over [reshaping en pivot tables](https://pandas.pydata.org/pandas-docs/stable/user_guide/reshaping.html) in de Pandas manual. Je kunt ook Goolgen voor tutorials ([hier een voorbeeld](https://www.shanelynn.ie/summarising-aggregation-and-grouping-data-in-python-pandas/)).

@@ -16,6 +16,7 @@ book:
     - Introductie_Python.ipynb
     - Introductie_Bestandsbeheer_met_Python.ipynb
     - Introductie_GDAL_in_Python.ipynb
+    - Introductie_NDVI.ipynb
   page-navigation: true
   #
   # als je geen menubalk wil kun je de volgende 
@@ -48,6 +49,8 @@ book:
         file: Introductie_Bestandsbeheer_met_Python.ipynb
       - text: "Werken met GDAL in Python"
         file: Introductie_GDAL_in_Python.ipynb 
+      - text: "Berekenen van NDVI"
+        file: Introductie_NDVI.ipynb
   # ... hier
   page-footer: |
     &copy; HAS green academy

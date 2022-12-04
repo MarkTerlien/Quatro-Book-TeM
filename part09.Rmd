@@ -1,0 +1,942 @@
+# Werken met databases en pandas {#idwygrmTzXx}
+
+## Introductie {#idwygOmTzXx}
+
+Een database is een digitaal opgeslagen gegevensbank ingericht met het oog op flexibele raadpleging en gebruik. Om met een database te kunnen werken is een Data Base Management System (DBMS) nodig. Een DBMS is de software die nodig is om databases te maken, te beheren en te gebruiken. Er zijn verschillende soorten databases. Wij werken in de komende labs met een relationele database.
+
+In een relationele database worden gegevens opgeslagen in tabellen. Een tabel bestaat uit kolommen en rijen. Rijen in een tabel worden uniek geïndentificeerd door een primary key. Tabellen kunnen aan elkaar gekoppeld door foreign key kolommen te gebruiken die verwijzen naar de primary key kolom van een andere tabel.
+
+Om met relationale databases te kunnen werken heb je een Relational Data Base Management Systeem (RDBMS) nodig. Wij werken de komende labs met het [open source RDBMS PostgreSQL](https://www.postgresql.org/). Andere veel gebruikte systemen zijn Oracle en SQLite.
+
+Je gebruikt de taal [SQL](https://nl.wikipedia.org/wiki/SQL) (Structured Query Language) om instructies te geven aan RDBMS om bepaalde taken uit te voeren. Er zijn twee soorten SQL commando's:
+
+* DDL (Data Definition Language) om databases en tabellen te maken en beheren
+* DML (Data Manipulation Language) om gegevens aan tabellen toe te voegen (insert), gegevens in tabellen bij te werken (update) en gegevens uit tabellen te verwijderen (delete).
+
+Om gegevens uit database tabellen te selecteren gebruik je [SQL queries](https://nl.wikipedia.org/wiki/Select_(SQL). Met SQL queries selecteer je nul, één of meerdere rijen uit één of meerdere tabellen op basis van nul, één of meerdere condities. 
+
+## Maken van een PostgreSQL database {#adwygOmTzXx}
+
+PostgreSQL is een RDBMS dat op de server draait. Het RDBMS handelt de SQL verzoeken af die binnenkomen vanaf applicaties zoals pgAdmin (voor database beheer), Geoserver (voor publiceren van geodata), QGIS (voor beheer van geodata) of Python scripts (voor maken van tabellen en bewerken van data). PostgreSQL maakt het mogelijk om met grote aantallen gebruikers gelijktijdig (concurrent) gegevens te benaderen en te bewerken. Ook is PostgreSQL goed schaalbaar. Dit betekent dat er geen limiet is aan de grootte van de gegevensverzamelingen waarmee gewerkt kan worden.
+
+Het maken van een PostgreSQL database doen we in dit lab met een Python script. Het is ook mogelijk om een database te maken van programma's als [pgAdmin](https://www.pgadmin.org/). Om vanuit een Python script te kunnen communiceren met PostgreSQL heb je de module *psycopg2* nodig. Het script begint daarom met het laden van de module *psycopg2*.
+
+```{python}
+# Basic imports
+import os
+
+# Import module for PostgreSQL
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+```
+
+Als de module geladen is, kan je een verbinding maken met de database server. 
+
+```{python eval=F}
+# Database connection parameters
+host = 'localhost'
+port = '5432'
+user = 'postgres'
+password = 'postgres'
+
+# Build connect string
+db_connect = "user=" + user + " host=" + host + " port=" + port + " password=" + password + '"'
+
+# Make connection with database
+conn = psycopg2.connect(db_connect)
+
+# Print success
+print('Database connection succeeded')
+```
+
+**Let op**: Wij maken gebruik van de superuser _postgres_ zolang we werken met PostgreSQL op onze eigen laptop. Als je met PostgreSQL werkt op een productieomgeving maak je *nooit* gebruik van de user _postgres_.
+
+
+## Maken van tabellen in een PostgreSQL database {#bdwygOmTzXx}
+
+We gaan in de komende labs werken met een relationeel datamodel dat bestaat uit drie tabellen:
+
+* meteostation
+* waarneming
+* provincie
+
+Het ERD is met de primary keys (PK) en foreign keys (FK) is hieronder hier te bekijken.
+
+Om deze tabellen te kunnen maken, moeten we eerst een database creëren. We gaan een database __meteodb__ creëren voor de opslag van onze data.
+
+```{python eval=F}
+# Set autocommit on
+conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+# Set name of database to create
+database_name = 'meteodb'
+
+# Build sql statement to create database
+sql_stmt = 'CREATE DATABASE ' + database_name
+
+# Get a cursor to execute SQL statements
+cur = conn.cursor()
+
+# Execute statement
+print("Create database " + database_name)
+cur.execute(sql_stmt)
+```
+
+We willen in de database ruimtelijke data op kunnen slaan en ruimtelijke analyses kunnen uitvoeren. Hiervoor moeten we de database uitbreiding [PostGIS](https://postgis.net/) installeren. PostGIS biedt het volgende:
+
+* Geometry datatype voor de opslag van punten, lijnen en vlakken
+* Ruimtelijke index om snel te kunnen zoeken op basis van locatie
+* Functies om ruimtelijke analyses uit te voeren (bijv. zoeken binnen een gebied of een buffer om een punt berekenen)
+
+De PostGIS uitbreiding is als volgt te installeren:
+
+```{python eval=F}
+# Build sql statement to install PostGIS extension
+sql_stmt = 'CREATE EXTENSION POSTGIS'
+
+# Get a cursor to execute SQL statements
+cur = conn.cursor()
+
+# Execute statement
+print("Install PostGIS extension")
+cur.execute(sql_stmt)
+```
+
+De volgende stap is het creëren van de tabellen. Uit het datamodel is af te leiden dat er een foreign key relatie bestaat tussen de tabellen _meteostation_ en _waarneming_. Elke waarnemening is gedaan op een meteostation. Daarom moeten we eerst de tabel _meteostation_ maken en daarna de tabel _waarneming_.
+
+De tabel _meteostation_ heeft de volgende kolommen. Per kolom is het datatype aangegeven:
+
+* id integer 
+* hoogte real 
+* naam character varying 
+* eigenaar character varying 
+* geom geometry(Geometry, 4326)
+
+De kolom _id_ is de primary key. Alle kolommen behalve _eigenaar_ zijn verplicht (_not null_). Bij de _geometry_ kolom is aangegeven dat alle type geometrieën opgeslagen kunnen worden (punten, lijnen en vlakken) en dat het coördinaatsysteem EPSG:4326 (WGS84) moet zijn. Op de _geom_ kolom maken we een ruimtelijke index aan om snel te kunnen zoeken.
+
+De tabel is met het volgende script te creëren:
+
+```{python, eval=F}
+# Get a cursor to execute SQL statements
+cur = conn.cursor()
+
+# Build SQL statement to create table
+sql_stmt = 'CREATE TABLE public.meteostation'
+sql_stmt = sql_stmt + '( id integer NOT NULL'
+sql_stmt = sql_stmt + ', hoogte real NOT NULL' 
+sql_stmt = sql_stmt + ', naam character varying NOT NULL'
+sql_stmt = sql_stmt + ', eigenaar character varying' 
+sql_stmt = sql_stmt + ', geom geometry(Geometry,4326) NOT NULL'
+sql_stmt = sql_stmt + ', CONSTRAINT meteostation_pkey PRIMARY KEY (id)'
+sql_stmt = sql_stmt + ')'
+sql_stmt = sql_stmt + ' WITH (OIDS = FALSE) TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+
+# Build SQL statement to create spatial index
+sql_stmt = 'CREATE INDEX meteostation_geom_ix'
+sql_stmt = sql_stmt + ' ON public.meteostation USING gist(geom)'
+sql_stmt = sql_stmt + ' TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+```
+
+**Let op**: Gebruik geen hoofdletters of spaties in de tabel- en kolomnamen. Dit kan voor problemen zorgen.
+
+De tabel _waarneming_ heeft de volgende kolommen. Per kolom is het datatype aangegeven:
+
+* id integer 
+* datum date
+* gemiddelde_temperatuur real
+* meteostation_id integer
+
+De kolom _id_ is de primary key. Alle kolommen zijn verplicht (_not null_). De kolom _meteostation\_id_ is de foreign key naar de tabel _meteostation_. 
+
+De tabel is met het volgende script te creëren:
+
+```{python, eval=F}
+# Get a cursor to execute SQL statements
+cur = conn.cursor()
+
+# Build SQL statement to create table
+sql_stmt = 'CREATE TABLE public.waarneming'
+sql_stmt = sql_stmt + '( id integer NOT NULL'
+sql_stmt = sql_stmt + ', datum date NOT NULL' 
+sql_stmt = sql_stmt + ', gemiddelde_temperatuur real NOT NULL'
+sql_stmt = sql_stmt + ', meteostation_id integer NOT NULL' 
+sql_stmt = sql_stmt + ', CONSTRAINT waarneming_pkey PRIMARY KEY (datum, meteostation_id),'
+sql_stmt = sql_stmt + ', CONSTRAINT meteostation_id_fkey FOREIGN KEY (meteostation_id)'
+sql_stmt = sql_stmt + '  REFERENCES public.meteostation (id) MATCH SIMPLE'
+sql_stmt = sql_stmt + '  ON UPDATE NO ACTION'
+sql_stmt = sql_stmt + '  ON DELETE NO ACTION'
+sql_stmt = sql_stmt + ')'
+sql_stmt = sql_stmt + ' WITH (OIDS = FALSE) TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+
+# Build SQL statement to create FK index
+sql_stmt = 'CREATE INDEX fki_meteostation_id_fkey'
+sql_stmt = sql_stmt + ' ON public.waarneming USING btree(meteostation_id)'
+sql_stmt = sql_stmt + ' TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+```
+
+De tabel _provincie_ heeft de volgende kolommen. Per kolom is het datatype aangegeven:
+
+* id integer 
+* naam character varying 
+* geom geometry(Geometry, 4326)
+
+De kolom _id_ is de primary key. Alle kolommen zijn verplicht (_not null_). Bij de _geometry_ kolom is aangegeven dat alle type geometrieën opgeslagen kunnen worden (punten, lijnen en vlakken) en dat het coördinaatsysteem [EPSG:4326](https://epsg.io/4326) (WGS84) moet zijn. Op de _geom_ kolom maken we een ruimtelijke index aan om snel te kunnen zoeken.
+
+De tabel is met het volgende script te creëren:
+
+```{python, eval=F}
+# Get a cursor to execute SQL statements
+cur = conn.cursor()
+
+# Build SQL statement to create table
+sql_stmt = 'CREATE TABLE public.provincie'
+sql_stmt = sql_stmt + '( id integer NOT NULL'
+sql_stmt = sql_stmt + ', naam character varying NOT NULL'
+sql_stmt = sql_stmt + ', geom geometry(Geometry,4326) NOT NULL'
+sql_stmt = sql_stmt + ', CONSTRAINT provincie_pkey PRIMARY KEY (id)'
+sql_stmt = sql_stmt + ')'
+sql_stmt = sql_stmt + ' WITH (OIDS = FALSE) TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+
+# Build SQL statement to create spatial index
+sql_stmt = 'CREATE INDEX provincie_geom_ix'
+sql_stmt = sql_stmt + ' ON public.provincie USING gist(geom)'
+sql_stmt = sql_stmt + ' TABLESPACE pg_default'
+
+# Execute statement
+cur.execute(sql_stmt)
+```
+
+**Let op**: Voor het maken van de database is _autocommit_ aangezet. Dit betekent dat elk commando direct op de database uitgevoerd wordt en niet expliciet hoeft te worden gecommit. Een nieuwe database is direct voor alle gebruikers zichtbaar. Als je DML statements gaat uitvoeren is het gebruikelijk om de autocommit uit te zetten. Dit betekent dat je alle DML statements (insert, update of delete) expliciet moet committen voordat de wijzigen in de database doorgevoerd worden en voor andere gebruikers zichtbaar zijn. Deze manier van werken maakt het mogelijk om met transacties (meerdere SQL statements achter elkaar) te werken die in zijn geheel moeten worden doorgevoerd of moeten worden teruggedraaid. 
+
+Je zet de autocommit af met het volgende statement:
+
+```{python, eval=F}
+# Set autocommit off
+conn.set_isolation_level(ISOLATION_LEVEL_DEFAULT)
+```
+
+
+## Laden van csv-bestand in PostgreSQL tabel {#cdwygOmTzXx}
+
+Wij gaan een csv-bestand met de meteo stations laden in de database tabel _meteostation_ met een Python script. Dit csv-bestand (_meteo_stations.csv_) heeft de volgende kolommen. Per kolom is aangegeven in welke database kolom de gegevens opgeslagen worden:  
+
+* alt => hoogte	
+* lat	=> geom
+* lon	=> geom
+* meteostationid =>	id
+* name	=> naam
+* provider	
+* source => eigenaar	
+* wmocode
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Openen en inlezen csv-bestand
+4. Per rij uit csv-bestand 
+    * Splitsen van rij in kolommen op basis van ';'
+    * Waardes ophalen uit rij
+    * Opstellen SQL insert statement
+    * Waardes uit csv-bestand koppelen aan en uitvoeren van SQL statement
+5. Commit
+6. Sluiten van database
+7. Sluiten van csv-bestand
+
+Om de _lon_ en _lat_ om te zetten naar een PostGIS geometrie maken we gebruik van de PostGIS functie [ST_MakePoint](https://postgis.net/docs/ST_MakePoint.html). Deze functie heeft als input lon (als x) en lat (als y). De output is het punt als PostGIS geometrie. De geometrieën worden aangeleverd in het coördinaatsysteem EPSG:4326. Met de PostGIS functie [ST_SetSRID](https://postgis.net/docs/ST_SetSRID.html) zetten we het coördinaatsysteem van de geometrie bij het inserten in de tabel op 4326.
+
+```{python, eval=F}
+# 1: Inladen modules
+import os       # Operating system interface
+import psycopg2 # PostgreSQL interface
+
+# 2: Openen database connectie
+conn = psycopg2.connect("host=localhost dbname=meteodb user=postgres password=postgres port=5432")
+cur = conn.cursor()
+
+# 3. Openen en inlezen csv-bestand ('r' is openen voor lezen)
+csv_file = open('meteo_stations.csv','r')
+lines = csv_file.readlines()
+
+# 4. Per rij uit csv-bestand 
+for line in lines :
+
+  # Splitsen van rij in kolommen op basis van ';'
+  kolom_waardes = line.split(';')
+  
+  # Waardes ophalen uit rij
+  hoogte = kolom_waardes[0]
+  lat = kolom_waardes[1]
+  lon = kolom_waardes[2]
+  id = kolom_waardes[3]
+  naam = kolom_waardes[4]
+  eigenaar = kolom_waardes[6]
+
+  # Opstellen SQL insert statement
+  sql_insert = 'insert into meteostation(id, hoogte, naam, eigenaar, geom) values (%s, %s, %s, %s, St_SetSRID(ST_makePoint(%s,%s),4326))'
+  
+  # Waardes uit csv-bestand koppelen aan en uitvoeren van SQL statement
+  cur.execute(sql_insert, (id, hoogte, naam, eigenaar, lon, lat))
+
+# 5: Commit
+conn.commit()
+
+# 6: Sluiten van database
+conn.close()
+
+# 7. Sluiten van csv-bestand  
+csv_file.close()
+```
+
+
+## Laden van csv-bestanden in PostgreSQL tabel met pandas {#hdwygOmTzXx}
+
+Het is ook mogelijk om csv-bestanden met de module *pandas* in de database te laden. Dit is vooral een handige methode als je niet al te veel checks en business logica in moet bouwen tijdens het inlezen. Wij gaan wederom een csv-bestand met de meteo stations laden in de database tabel _meteostation_. Dit csv-bestand (_meteo_stations.csv_) heeft de volgende kolommen. Per kolom is aangegeven in welke database kolom de gegevens opgeslagen worden:  
+
+* alt => hoogte	
+* lat	=> geom
+* lon	=> geom
+* meteostationid =>	id
+* name	=> naam
+* provider	
+* source => eigenaar	
+* wmocode
+
+De kolommen _provider_ en _wmocode_ worden niet in de database opgeslagen.
+
+Ook in deze oplossing maken we gebruik van de PostGIS functie [ST_MakePoint](https://postgis.net/docs/ST_MakePoint.html) om een PostGIS punt te maken en van  [ST_SetSRID](https://postgis.net/docs/ST_SetSRID.html) om het coördinaatsysteem van de geometrie te zetten op 4326.
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Inlezen van csv-bstand in dataframe
+3. Printen van kolommen en tellen van rijen in csv-bestand
+4. Verwijderen van kolommen die geen deel uitmaken van tabel
+5. Kolommen in dataframe in de juiste volgorde zetten
+6. Rijen van dataframe in numpy lijst zetten
+7. Openen database connectie
+8. Opstellen van SQL insert statement. Volgorde kolommen moet overeenkomen met volgorde in lijst
+9. Uitvoeren insert statement
+10. Commit en sluiten database connectie
+
+```{python, eval=F}
+# 1. Inladen modules
+import os           # Operating system interface
+import psycopg2     # PostgreSQL interface
+import pandas as pd # Dataframe interface
+
+# 2. Inlezen van csv-bstand in dataframe
+df = pd.read_csv('data/meteo_stations.csv', sep=';')
+
+# 3. Printen van kolommen en tellen van rijen in csv-bestand
+print(df.columns)
+print(len(df.index))
+
+# 4. Verwijderen van kolommen die geen deel uitmaken van tabel
+df.drop('provider', inplace=True, axis=1)
+df.drop('wmocode', inplace=True, axis=1)
+
+# 5. Kolommen in dataframe in de juiste volgorde zetten
+df = df[['alt', 'lon', 'lat', 'meteostationid', 'name', 'source']]
+
+# 6. Rijen van dataframe in numpy lijst zetten
+rows = [tuple(x) for x in df.to_numpy()]
+
+# 7. Openen database connectie
+conn = psycopg2.connect("host=localhost dbname=engineer2021 user=postgres password=postgres port=5432")
+cur = conn.cursor()
+
+# 8.Opstellen van SQL insert statement. Volgorde kolommen moet overeenkomen met volgorde in lijst
+sql_insert = 'insert into meteostation(hoogte, geom, id, naam, eigenaar)' 
+sql_insert = sql_insert + ' values (%s, St_SetSRID(ST_makePoint(%s,%s),4326), %s, %s, %s)'
+            
+# 9. Uitvoeren insert statement 
+cur.executemany(sql_insert, rows)
+            
+# 10. Commit en sluiten database connectie           
+conn.commit()
+conn.close()
+```
+
+Andere voorbeelden van het laden van csv-bestanden met *pandas* kan je [hier](https://naysan.ca/2020/05/09/pandas-to-postgresql-using-psycopg2-bulk-insert-performance-benchmark/) vinden.
+
+
+
+## Laden van ESRI shape-bestand in PostgreSQL tabel {#edwygOmTzXx}
+
+Wij gaan een ESRI shape-bestand met de provincie grenzen van Nederland (_2018_provinciegrenzen_met_water.shp_) laden in de database tabel _provincie_ met een Python script. Het shape-bestand heeft de volgende attributen. Per attribuut is aangegeven in welke database kolom het attribuut opgeslagen wordt.
+
+id => id
+gml_id
+Provincien => naam
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Openen en inlezen shape-bestand
+4. Per feature uit shape-bestand: 
+    * Waardes ophalen uit feature
+    * Opstellen SQL insert statement
+    * Waardes uit shape-bestand koppelen aan en uitvoeren van SQL statement
+5. Commit
+6. Sluiten van database
+7. Sluiten van shape-bestand
+
+Voor het inlezen van ESRI shape-bestanden maken we gebruik van de GDAL/OGR module (zie paragraaf \@ref(#idMS0vglUb0)). Om de geometrie uit het shape-bestand om te zetten naar een PostGIS geometrie maken we gebruik van de PostGIS functie [ST_GeomFromText](https://postgis.net/docs/ST_GeomFromText.html). Deze functie heeft als input de geometrie in [WKT formaat](en.wikipedia.org/wiki/Well-known_text_representation_of_geometry) en het coördinaatsysteem van de aangeleverde geometrie. De geometrie uit het shape-bestand heeft [EPSG:28992](https://epsg.io/28992) (RD) als coördinaatsysteem. Om deze geometrie om te zetten naar een WKT geometrie zodat deze omgezet kan worden naar een PostGIS geometrie maken we gebruik een functie _ExportToWkt()_ uit de _ogr_ module.
+
+In de tabel _provincie_ moet de geometrie opgeslagen worden in het coördinaatsysteem EPSG:4326. Daarom gebruiken we de PostGIS functie [ST_Transform](https://postgis.net/docs/ST_Transform.html) om de geometrie uit het shape-bestand te transformeren van coördinaatsysteem EPSG:4326 naar coördinaatsysteem EPSG:28992.
+
+```{python, eval=F}
+# 1: Inladen modules
+import os       # Operating system interface
+import psycopg2 # PostgreSQL interface
+import ogr      # Vectordata interface
+
+# 2: Openen database connectie
+conn = psycopg2.connect("host=localhost dbname=meteodb user=postgres password=postgres port=5432")
+cur = conn.cursor()
+
+# 3. Openen en inlezen shape-bestand ('r' is openen voor lezen)
+driver = ogr.GetDriverByName('ESRI Shapefile')
+shp_file = driver.Open('2018_provinciegrenzen_met_water.shp', 0)
+layer = shp_file.GetLayer()
+
+# 4. Per rij uit shape-bestand 
+feature = layer.GetNextFeature()
+while feature:
+
+    # Waardes ophalen uit feature
+    id = feature.GetField('id')
+    naam = feature.GetField('Provincien')
+    geom_wkt = feature.GetGeometryRef().ExportToWkt()
+    
+    # Opstellen SQL insert statement
+    sql = 'insert into provincie(id, naam, geom) values (%s, %s, st_transform(st_geomfromtext(%s,28992),4326))'
+    
+    # Waardes uit shape-bestand koppelen aan en uitvoeren van SQL statement
+    cur.execute(sql,(id, naam, geom_wkt))
+    
+    # Volgende feature ophalen
+    feature = layer.GetNextFeature()
+
+# 5: Commit
+conn.commit()
+
+# 6: Sluiten van database
+conn.close()
+
+# 7. Sluiten van shape-bestand  
+shp_file = None
+```
+
+[Hier](https://pcjericks.github.io/py-gdalogr-cookbook/) vind je meer voorbeelden van het gebruik van Python scripts in combinatie met GDAL/OGR voor het werken met geodata. 
+
+
+## Laden van json-bestand in PostgreSQL tabel {#fdwygOmTzXx}
+
+We gaan een JSON-bestand met temperatuurgegevens laden in de tabel _waarneming_. Dit JSON-bestand halen we op via een web API bij de [AgroDataCude](https://agrodatacube.wur.nl/). AgroDataCube biedt een grote vezameling van open data en afgeleide data voor gebruik binnen het agri-food domein. Deze data is te bevragen en op te halen via een web API. Uitleg over deze web API en voorbeelden zijn [hier](https://documenter.getpostman.com/view/3284162/TVeqd7aa) te vinden. Om de web API te kunnen gebuiken met je je eerst [hier](https://agrodatacube.wur.nl/api-v2/register.jsp) registreren. Dan krijg je een access token toegemaild om toegang te krijgen. Gebruik van AgroDataCube is gratis als je minder dan 25000 verzoeken pr jaar doet. Daarboven moet je gaan betalen.  
+
+In het script gaan we de meteodata ophalen voor meteostations met de volgende ID's: 235, 240, 251, 270 voor de periode van 20150201 tot 2015022. Zowel het meteostation ID als de periode moeten we meegeven in het HTTP request. We halen per meteostation alleen de _datum_ en de _mean_temperature_ uit het JSON-bestand. Deze gegevens worden in de volgende kolommen van de tabel _waarneming_ opgeslagen:
+
+datum => datum
+mean_temperature => gemiddelde_temperatuur
+meteostation ID => meteostation_id
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Definiëren lijst met meteostation ID's
+3. Definiëren HTTP header met token
+4. Openen database connectie
+5. Per meteostation: 
+    * Samenstellen HTTP request
+    * Uitvoeren HTTP request
+    * Waardes ophalen uit JSON response
+    * Opstellen SQL insert statement
+    * Waardes uit JSON response koppelen aan en uitvoeren van SQL statement
+6. Commit
+7. Sluiten van database
+
+```{python, eval=F}
+# 1. Inladen modules
+import requests # HTTP interface
+import json     # JSON interface
+import psycopg2 # PostgreSQL interface
+
+# 2. Definiëren lijst met meteostation ID's
+meteo_ids = (235, 240, 251, 270)
+
+# 3. Definiëren HTTP header met token
+
+# You need te request a token at https://agrodatacube.wur.nl/api-v2/register.jsp
+token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3N1ZWR0byI6Im0udGVybGllbkBoYXMubmwiLCJyZXNvdXJjZSI6WyIqIl0sImlhdCI6MTYyNTY1MjkyMH0.6Xkg6Fdmj7pAvSdLPhFZHpwXx53h3rP716WQzABOG4M'
+
+# HTTP headers
+headers = {
+    'Accept': 'application/json',
+    'token': token, 
+}
+
+# 4. Openen database connectie
+conn = psycopg2.connect("host=localhost dbname=meteodb user=postgres password=postgres port=5432")
+cur = conn.cursor()
+
+# 5. Per meteostation:
+for meteo_id in meteo_ids :
+
+    # Samenstellen HTTP request (see https://documenter.getpostman.com/view/5525378/S1EQSdKN#35d1ce17-8fd1-4815-b8f8-365f2cd08b84)
+    url = 'https://agrodatacube.wur.nl/api/v2/rest/meteodata?output_epsg=28992&meteostation=' + str(meteo_id) + '&fromdate=20150201&todate=20150228&page_size=25&page_offset=0'
+
+    # Uitvoeren HTTP request
+    response = requests.get(url, headers=headers)
+
+    # Waardes ophalen uit JSON response
+    if response.status_code == 200 :
+
+        # Waardes ophalen uit JSON response
+        for feature in response.json()["features"]:
+            temp  = feature["properties"]["mean_temperature"]
+            datum = feature["properties"]["datum"]
+
+            # Opstellen SQL insert statement
+            sql = 'insert into waarneming(datum, gemiddelde_temperatuur, meteostation_id) values(%s, %s, %s)'
+            # Waardes uit JSON response koppelen aan en uitvoeren van SQL statement
+            cur.execute(sql,(datum,temp,meteo_id))
+
+    else:
+        print('Request failed with error ' + str(response.status_code))
+
+# 6: Commit
+conn.commit()
+
+# 7: Sluiten van database
+conn.close()
+```
+
+Met de regel 
+
+```{python, eval=F}
+if response.status_code == 200 :
+```
+
+checken we of het verzoek goed gegaan is. Als dat niet het geval is wordt de foutcode geprint. [Hier](https://nl.wikipedia.org/wiki/Lijst_van_HTTP-statuscodes) kan je opzoeken wat de foutcodes betekenen.
+
+De manier waarop we de datum en temperatuur uit de JSON-response halen, behoeft enige uitleg. De JSON die we terugkrijgen als response is een [GeoJSON](https://nl.wikipedia.org/wiki/GeoJSON)-bestand en wordt vertaald naar [Python dictionaries](https://www.w3schools.com/python/python_dictionaries.asp) en [Python lists](https://www.w3schools.com/python/python_lists.asp). De structuur van het bestand is als volgt:
+
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": ["x_value", "y_value"]
+      },
+      "properties": {
+        "datum": "datum_value"
+		"mean_temperature": "mean_temperature_value"
+      }
+    },
+  ]
+}
+
+Als eerste stap halen we op basis van de key "features" de lijst met features uit de dictionary. Vervolgens halen we per feature eerst de op basis van de key "properties" de properties van de feature op. Als laatste stap halen we op basis van de naam van de properties (key "datum" en "mean_temperature") de waarde van de property op.
+  
+
+
+## Selecteren van gegevens uit PostgreSQL database tabellen met SQL {#hdwTgOmTzXx}
+
+In de vorige paragrafen hebben we gezien hoe je data uit verschillende bestandsformaten kan laden in een database tabel. Als de data in een database tabel staat, kunnen we deze data met [SQL queries](https://nl.wikipedia.org/wiki/Select_(SQL) opvragen uit de database. Via SQL queries selecteer je nul, één of meer rijen uit één of meerdere tabellen op basis van nul, één of meer condities. SQL queries kunnen uitgevoerd worden via _psycopg2_ (Python interface). De queries kunnen ook uitgevoerd worden met tools zoals [pgAdmin](https://www.pgadmin.org/) of [DBeaver](https://dbeaver.io/). Om een SQL query uit te kunnen voeren, moet je eerst een connectie met de database maken. Vervolgens kan je de SQL query uitvoeren.
+
+Hieronder volgen een aantal voorbeelden van SQL select queries. 
+
+* Selecteren van alle rijen uit een tabel _meteostation_. Per rij worden alle kolommen getoond.
+
+```{sql, eval=F}
+SELECT * FROM meteostation
+```
+
+* Selecteren van alle rijen uit een tabel _meteostation_. Per rij wordt een beperkte set van kolommen getoond.
+
+```{sql, eval=F}
+SELECT id, hoogte, naam, eigenaar FROM meteostation
+```
+
+* Tellen van aantal rijen in tabel _meteostation_. 
+
+Hiervoor gebruiken we de functie [COUNT](https://www.w3schools.com/sql/sql_count_avg_sum.asp).
+
+```{sql, eval=F}
+SELECT COUNT(1) FROM meteostation
+```
+
+* Selecteren van rij voor meteostation \'Schiphol\' uit tabel _meteostation_. 
+
+In de WHERE-clause geven we aan dat we alleen geïnteresseerd zijn in het meteostation Schiphol. 
+
+```{sql, eval=F}
+SELECT * FROM meteostation WHERE naam = 'Schiphol'
+```
+
+Als we meerdere stations willen selecteren kunnen we gebruik maken van [OR](https://www.w3schools.com/sql/sql_and_or.asp) of van [IN](https://www.w3schools.com/sql/sql_in.asp).
+
+```{sql, eval=F}
+SELECT * FROM meteostation WHERE naam = 'Schiphol' OR naam = 'Valkenburg
+```
+
+```{sql, eval=F}
+SELECT * FROM meteostation WHERE naam IN ('Schiphol', 'Valkenburg')
+```
+
+* Selecteren van gemiddelde_temperatuur waarnemingen tussen 01-01-2016 en 31-01-2016 uit de tabel _waarneming_. 
+
+Om binnen een datuminterval te zoeken, moeten we een minimale en maximale datum opgeven en deze condities samenvoegen met [AND](https://www.w3schools.com/sql/sql_and_or.asp) omdat de datum aan beide condities moet voldoen. Om te zorgen dat de datums waarbinnen we willen zoeken herkend worden als datum, gebruiken we de functie [TO_DATE](https://www.postgresqltutorial.com/postgresql-to_date/). 
+
+```{sql, eval=F}
+SELECT * FROM waarneming WHERE datum >= TO_DATE('20160101','YYYYMMDD') AND datum <= TO_DATE('20160131','YYYYMMDD')
+```
+
+* Selecteren van minimale, maximale en gemiddelde hoogte van alle meteostations in tabel _meteostation_. 
+Hiervoor gebruiken we de aggregatie functies [MIN](https://www.w3schools.com/sql/sql_min_max.asp), [MAX](https://www.w3schools.com/sql/sql_min_max.asp) en [AVG](https://www.w3schools.com/sql/sql_count_avg_sum.asp). Deze worden uitgevoerd op alle geselecteerde kolomwaardes.
+
+```{sql, eval=F}
+SELECT MIN(hoogte), MIN(hoogte), AVG(hoogte) FROM meteostation 
+```
+
+* Koppelen van rijen uit de tabellen _meteostation_ en _waarneming_ op basis van het ID van het meteostation. 
+
+Hierbij wordt de foreign key kolom _meteostation_id_ gekoppeld van de tabel _waarneming_ gekoppeld aan de primary key kolom _id_ van de tabel _meteostation_. Dit gebeurt in de WHERE-clause van de query. Dit wordt een table join genoemd. Op deze manier kan gegevens uit beide tabellen gekoppeld worden. In dit geval willen we per waarneming ook de naam van het meteostation ophalen en tonen. Omdat we kolommen selecteren uit verschillende tabellen en kolommen in verschillende tabellen dezelfde naam kunnen hebben, is het gebruikelijk om in het geval van table joins de naam van de tabel te plaatsen voor de kolomnaam gevolgd door een punt(.), dus \<tabelnaam\>.\<kolomnaam\>. Je doet dit zowel in de SELECT als in de WHERE-clause. Als tabelnamen erg lang worden, kan je ook werken met een [tabel alias](https://www.tutorialspoint.com/postgresql/postgresql_alias_syntax.htm).
+
+```{sql, eval=F}
+SELECT meteostation.naam
+,      waarneming.gemiddelde_temperatuur
+FROM meteostation
+,    waarneming
+WHERE meteostation.id = waarneming.meteostation_id
+```
+
+Een andere manier om tabellen te koppelen in door gebruik te maken van het keyword [INNER JOIN](https://www.w3schools.com/sql/sql_join_inner.asp) of [LEFT JOIN](https://www.w3schools.com/sql/sql_join_left.asp). Bij een INNER JOIN worden alleen de meteostations getoond waarvoor er gemiddele temperaturen zijn gevonden in de tabel _waarneming_. Bij een LEFT JOIN worden alle meteostations getoond. Als er geen gemiddelde temperatuur gevonden is in de tabel _waarneming_ blijft deze kolom leeg (NULL).
+
+```{sql, eval=F}
+SELECT meteostation.naam
+,      waarneming.gemiddelde_temperatuur
+FROM meteostation
+INNER JOIN waarneming
+ON meteostation.id = waarneming.meteostation_id
+```
+
+```{sql, eval=F}
+SELECT meteostation.naam
+,      waarneming.gemiddelde_temperatuur
+FROM meteostation
+LEFT JOIN waarneming
+ON meteostation.id = waarneming.meteostation_id
+```
+
+* Berekenen van de maximum temperatuur per meteostation uit de tabel _meteostation_ op basis van de gegevens in de tabel _waarneming_ voor de periode waarvoor temperatuurgegevens beschikbaar zijn. De resultaten moeten gesorteerd worden op basis van maximum temperatuur waarbij het station met de hoogste maximum temperatuur als eerste getoond wordt.
+
+Hiervoor moeten we eerst de twee tabellen koppelen zoals in het vorige voorbeeld. Vervolgens moeten we per meteostation de temperaturen gaan groeperen. Hiervoor maken we gebruik van [GROUP BY](https://www.tutorialspoint.com/postgresql/postgresql_group_by.htm). Vervolgens gebruiken we de functie [MAX](https://www.w3schools.com/sql/sql_min_max.asp) op per groep (meteostation) de maximum waarde van alle waardes in de kolom _gemiddelde\_temperatuur_ te berekenen. Als laatste stap moeten we het resultaat sorteren op maximum temperatuur. Hiervoor maken we gebruik van [ORDER BY](https://www.tutorialspoint.com/postgresql/postgresql_order_by.htm). Met het keyword DESC geven we aan dat we descending willen sorteren, dus eerst de hoogste waarde.
+
+```{sql, eval=F}
+SELECT meteostation.naam
+,      MAX(waarneming.gemiddelde_temperatuur)
+FROM meteostation
+,    waarneming
+WHERE meteostation.id = waarneming.meteostation_id
+GROUP BY meteostation.naam
+ORDER BY MAX(waarneming.gemiddelde_temperatuur) DESC
+```
+
+**Let op**
+Alle kolommen die in de SELECT gebruikt worden, moeten in de GROUP BY gebruikt worden met uitzondering van de kolommen die in een aggregatie functie (bijv. MIN, MAX, AVG, SUM) gebruikt worden.
+
+* Selecteren van alle meteostations binnen een buffer van 25 km rondom het punt met coördinaat x = 140570 en y = 516299. De coördinaat is in RD ([EPSG:28992](https://epsg.io/28992)). 
+
+Hiervoor moeten we als eerste stap de opgegeven coördinaat omzetten naar een PostGIS punt in het juiste coördinaatsysteem.. Hiervoor gebruiken we de functie [ST_MakePoint](https://postgis.net/docs/ST_MakePoint.html) en [ST_setSRID](https://postgis.net/docs/ST_SetSRID.html). Vervolgens berekenen we de buffer om dit punt met de functie [ST_Buffer](https://postgis.net/docs/ST_Buffer.html). Hierbij geven we de grootte van de buffer op in meters (25000). Als laatste stap moeten we de intersectie bepalen tussen de locaties van de meteostations en de buffer, dus welke meteostations vallen binnen de buffer? Hiervoor gebruiken we de functie [ST_Intersects](https://postgis.net/docs/ST_Intersects.html). Deze functie geeft TRUE terug als er een punt binnen de buffer valt en FALSE als een punt buiten de buffer valt. Omdat de functie ST_Intersects vereist dat beide geometrieën in hetzelfde coördinaatsysteem gedefinieerd zijn, moeten we een coördinaattransformatie uitvoeren zodat de locatie van de meteostations, opgeslagen is in [WGS84](https://epsg.io/4326) omgezet wordt naar RD (28992). Hiervoor gebruiken we de functie [ST_Transform](https://postgis.net/docs/ST_Transform.html).
+
+```{sql, eval=F}
+SELECT id, naam, hoogte, geom 
+FROM meteostation
+WHERE ST_Intersects(ST_Transform(geom,28992),ST_Buffer(ST_SetSRID(ST_MakePoint(140570,516299),28992),25000)) 
+```
+
+* Selecteren van meteostations voor de provincie Utrecht op basis van locatie waarbij resultaat bestaat uit lijst met kolom _provincie_ en _meteostation_. 
+
+Hiervoor gebruiken we wederom de functie [ST_Intersects](https://postgis.net/docs/ST_Intersects.html) waarbij we nu alleen de meteostations selecteren die binnen de pronvincie Utrecht vallen. In de WHERE-clause geven we aan dat we alleen geïnteresseerd zijn in de provincie Utrecht. 
+
+```{sql, eval=F}
+SELECT meteostation.id, meteostation.naam, meteostation.hoogte, meteostation.geom 
+FROM meteostation,
+,    province
+WHERE ST_Intersects(provincie.geom, meteostation.geom)
+AND   provincie.naam = 'Utrecht'
+```
+
+
+## Selecteren van data uit PostgreSQL tabel met Python script {#ddwygOmTzXx}
+
+In Python kunnen SQL queries uitgevoerd worden via de module _psycopg2_. Om te controleren of de gegevens goed ingelezen zijn, gaan we in een Python script een aantal selecties uitvoeren op de tabel _meteostation_. We gaan eerst alle rijen uit de tabel _meteostation_ ophalen en printen naar het scherm. Daarna gaan we het aantal rijen in de tabel _meteostation_ tellen. 
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Opstellen SQL statement om alle rijen te selecteren
+4. Uitvoeren SQL statement 
+5. Per rij:
+  * Ophalen waardes uit rij
+  * Print waardes naar scherm
+6: Sluiten van database
+
+```{python, eval=F}
+# 1. Inladen modules
+import os       # Operating system interface
+import psycopg2 # PostgreSQL interface
+
+# 2. Openen database connectie
+conn = psycopg2.connect("host=localhost dbname=meteodb user=postgres password=postgres port=5432")
+cur = conn.cursor()
+
+# 3. Opstellen SQL statement om alle rijen te selecteren
+sql_select = 'select * from meteostation'
+  
+# 4. Uitvoeren SQL statement  
+cur.execute(sql_select)
+
+# 5. Per rij
+for row in cur.fetchall() :
+
+  # Ophalen waardes uit rij
+  id = row[0]
+  hoogte = row[1]
+  naam = row[2]
+  eigenaar = row[3]
+  
+  # Print waardes naar scherm
+  print('id: ' + str(id))
+  print('hoogte: ' + str(hoogte))
+  print('naam: ' + str(naam))
+  print('eigenaar: ' + str(eigenaar))
+
+# 6: Sluiten van database
+conn.close()
+```
+
+
+## Exporteren tabel uit PostgreSQL naar csv-bestand {#gdwygOmTzXx}
+
+Het is natuurlijk ook mogelijk om de rijen die we met Python ophalen uit de database op te slaan in een bestand. We gaan de gegevens uit de tabel _meteostation_ exporteren naar een csv-bestand waarbij de x-coördinaat en de y-coördinaat in verschillende kolommen worden opgeslagen. Om de X- en y-coördinaat uit de PostGIS geometrie te halen worden de functies [ST_X](https://postgis.net/docs/ST_X.html) en [ST_Y](https://postgis.net/docs/ST_Y.html) gebruikt. De kolomwaardes worden in het csv-bestand gescheiden door een semicolon (;). \\n wordt gebruikt om naar de volgende regel te gaan.
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Maken van nieuw csv-bestand en open voor schrijven ('w')
+4. Ophalen van rijen uit database
+5. Per rij: 
+    * Kolomwaardes ophalen uit rij
+    * Regel met waardes schrijven naar csv-bestand
+6. Sluiten csv-bestand
+7. Sluiten van database
+
+```{python, eval=F}
+# 1. Inladen modules
+import os       # Operating system interface
+import psycopg2 # PostgreSQL interface
+
+# 2. Openen database connectie
+conn = psycopg2.connect("dbname=meteo user=postgres password=postgres")
+cur = conn.cursor()
+
+# 3: Maken van nieuw csv-bestand en open voor schrijven ('w')
+csv_file = open('meteo_stations_from_database.csv','w')
+
+# 4. Ophalen van rijen uit database
+sql = 'select id, hoogte, naam, ST_X(geom), ST_Y(geom) from meteostation'
+cur.execute(sql)
+rows = cur.fetchall()
+
+# 5. Per rij:  
+for row in rows :
+
+    # Kolomwaardes ophalen uit rij
+    id = str(row[0])
+    hoogte = str(row[1])
+    naam = str(row[2])
+    x = str(row[3])
+    y = str(row[4])
+
+    # Regel met waardes schrijven naar csv-bestand
+    csv_file.write(id + ';'+ hoogte + ';' + naam + ';' + x + ';' + y + '\n')
+
+# 6: Sluiten csv-bestand
+csv_file.close()
+
+# 7. Sluiten van database
+conn.close()
+```
+
+
+## Exporteren tabel uit PostgreSQL naar csv-bestand via COPY {#ldwygOmTzXx}
+
+Het is ook mogelijk de gegevens uit de tabel _meteostation_ exporteren naar een csv-bestand met behulp van het _COPY_ commando. Dit is een snellere methode dan rij voor rij exporteren. Ook in dit geval worden de x-coördinaat en de y-coördinaat in verschillende kolommen  opgeslagen. Om de X- en y-coördinaat uit de PostGIS geometrie te halen worden de functies [ST_X](https://postgis.net/docs/ST_X.html) en [ST_Y](https://postgis.net/docs/ST_Y.html) gebruikt. De kolomwaardes worden in het csv-bestand gescheiden door een komma (,). 
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Opstellen van SQL query
+4. Selecteer rijen uit database
+5. Open nieuw csv-bestand voor schrijven
+6. Sla rijen op in csv-bestand
+7. Sluiten csv-bestand
+8. Sluiten database
+
+```{python, eval=F}
+# 1. Inladen modules
+import os           # Operating system interface
+import psycopg2     # PostgreSQL interface
+
+# 2. Open database connectie
+conn = psycopg2.connect("dbname=meteo user=postgres password=postgres")
+cur = conn.cursor()
+
+# 3. Opstellen van SQL query
+sql = 'select id, hoogte, naam, ST_X(geom), ST_Y(geom) from meteostation'
+
+# 4. Selecteer rijen uit database
+rows = "COPY ({0}) TO STDOUT WITH CSV HEADER".format(sql)
+
+# 5. Open nieuw csv-bestand voor schrijven
+csv_file = open('meteo_stations_from_database.csv','w')
+
+# 6. Sla rijen op in csv-bestand 
+cur.copy_expert(rows, csv_file)
+
+# 7. Sluiten csv-bestand
+csv_file.close()
+
+# 8. Sluiten database
+conn.close()
+```
+
+## Exporteren tabel uit PostgreSQL naar csv-bestand via pandas {#ndwygOmTzXx}
+
+Het is ook mogelijk de gegevens uit de tabel _meteostation_ exporteren naar een csv-bestand met behulp van de _pandas_ module. Ook in dit geval worden de x-coördinaat en de y-coördinaat in verschillende kolommen  opgeslagen. Om de X- en y-coördinaat uit de PostGIS geometrie te halen worden de functies [ST_X](https://postgis.net/docs/ST_X.html) en [ST_Y](https://postgis.net/docs/ST_Y.html) gebruikt. De kolomwaardes worden in het csv-bestand gescheiden door een semicolon (;). 
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Openen database connectie
+3. Opstellen van SQL query
+4. Selecteer rijen uit database in dataframe
+5. Schrijf datframe naar csv-bestand
+6. Sluiten database
+
+```{python, eval=F}
+# 1. Inladen modules
+import os           # Operating system interface
+import psycopg2     # PostgreSQL interface
+import pandas.io.sql as psql # Dataframe interface
+
+# 2. Open database connectie
+conn = psycopg2.connect("dbname=meteo user=postgres password=postgres")
+cur = conn.cursor()
+
+# 3. Opstellen van SQL query
+sql = 'select id, hoogte, naam, ST_X(geom), ST_Y(geom) from meteostation'
+
+# 4. Selecteer rijen uit database in dataframe
+df = psql.read_sql(sql, conn)
+
+# 5. Schrijf datframe naar csv-bestand
+df.to_csv('meteo_stations_from_database.csv',sep=';')
+
+# 6. Sluiten database
+conn.close()
+```
+
+
+## Uitvoeren spatial join met geopandas {#odwygOmTzXx}
+
+De Python module [_geopandas_](https://geopandas.org/) kan gebruikt worden om ruimtelijke bewerkingen uit te voeren op dataframes in Python. In het volgende script gaan we per meteostation bepalen in welke provincie het ligt. De bewerking die we gaan uitvoeren, kunnen we ook in SQL op de database doen met de volgende query:
+
+```{sql, eval=F}
+SELECT meteostation.naam, provincie.naam, meteostation.geom 
+FROM meteostation,
+,    province
+WHERE ST_Intersects(provincie.geom, meteostation.geom)
+
+```
+
+De module _geopandas_ kan geïnstalleerd worden met *pip install geopandas*. Zorg er wel voor dat de afhankelijke modules _shapely_, _fiona_, _pyproj_ en _rtree_ geïnstalleerd zijn. De wheels met deze modules kunnen [hier](https://www.lfd.uci.edu/~gohlke/pythonlibs/) gedownload worden. Uitgebreide toelichting op installatie proces is [hier](https://geopandas.org/getting_started/install.html) te vinden. Een overzicht van de mogelijkheden van _geopandas_ is [hier](https://geopandas.org/gallery/index.html) te vinden.  
+
+Het script bestaat uit de volgende stappen:
+
+1. Inladen modules
+2. Importeren csv-bestand meteostations in dataframe
+3. Maken een geodataframe met meteostations
+4. Importeren shp-bestand provincies in geodataframe
+5. Coordinaattransformatie naar EPSG:4326
+6. Koppelen provincie aan meteostation met spatial join
+7. Selecteren de kolommen die je wilt behouden
+8. Opslaan resultaat als geopackage-bestand
+
+```{python, eval=F}
+# 1. Import modules
+import pandas as pd
+import geopandas as gpd
+import numpy as np
+
+# 2. Importeren csv-bestand meteostations in dataframe
+df_meteostations = pd.read_csv('data/meteo_stations.csv',sep=';')
+
+# 3. Maken een geodataframe met meteostations
+gdf_meteostations = gpd.GeoDataFrame(df_meteostations, geometry=gpd.points_from_xy(df_meteostations['lon'],df_meteostations['lat']),crs='EPSG:4326')
+
+# 4. Importeren shp-bestand provincies in geodataframe
+gdf_provincies = gpd.read_file("data/2018_provinciegrenzen_met_water.shp")
+
+# 5. Coordinaattransformatie naar EPSG:4326
+gdf_provincies = gdf_provincies.to_crs("EPSG:4326")
+
+# 6. Koppelen provincie aan meteostation met spatial join
+gdf_spatial_join = gpd.sjoin(gdf_meteostations, gdf_provincies, how='inner')
+
+# 7. Selecteren de kolommen die je wilt behouden
+gdf_resultaat = gdf_spatial_join[['meteostationid', 'name', 'geometry', 'Provincien']]
+print(gdf_resultaat)
+
+# 8. Opslaan resultaat als geopackage-bestand
+gdf_resultaat.to_file("deleteme.gpkg", driver="GPKG")
+```
+
+
+## fiona, shapely, rasterio {#kdwygOmTzXx}
+
+De module [_fiona_](https://pypi.org/project/Fiona/) is een vector API gebouwd op _GDAL_ en kan gebruikt worden voor het lezen en schrijven van GIS vectordata en maakt in tegenstelling tot het object geörienteerde _GDAL_ gebruik van files, directories, mappings en iteratoren.   
+
+De module [_rasterio_](https://rasterio.readthedocs.io/en/latest/index.html) is een raster API gebouwd op _GDAL_ en maakt het werken met raster datasets eenvoudiger en meer in de lijn met andere Python modules.
+
+De module [_shapely_](https://pypi.org/project/Shapely/) kan gebruikt worden voor het manipuleren en analyseren van geometrische objecten in het Cartesisch vlak. _shapely_ houdt geen rekening met coördinaatsystemen en dataformaten. Hiervoor moeten andere modules gebruikt worden.
+
+
+
+
+
