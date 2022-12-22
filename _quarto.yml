@@ -17,6 +17,9 @@ book:
     - Introductie_Bestandsbeheer_met_Python.ipynb
     - Introductie_GDAL_in_Python.ipynb
     - Introductie_NDVI.ipynb
+    - Maken_van_database.ipynb
+    - Laden_van_gegevens_in_database.ipynb
+    - supervised_classification.ipynb
   page-navigation: true
   #
   # als je geen menubalk wil kun je de volgende 
@@ -43,14 +46,20 @@ book:
         file: summary.qmd
       - text: "References"
         file: references.qmd
-      - text: "Introductie Python"
+      - text: "Intro Python"
         file: Introductie_Python.ipynb
-      - text: "Bestandsbeheer met Python"
+      - text: "Bestandsbeheer"
         file: Introductie_Bestandsbeheer_met_Python.ipynb
-      - text: "Werken met GDAL in Python"
+      - text: "Intro GDAL"
         file: Introductie_GDAL_in_Python.ipynb 
-      - text: "Berekenen van NDVI"
+      - text: "Berekenen NDVI"
         file: Introductie_NDVI.ipynb
+      - text: "Supervised classificatie"
+        file: supervised_classification.ipynb
+      - text: "PostGIS database"
+        file: Maken_van_database.ipynb
+      - text: "Laden van database"
+        file: Laden_van_gegevens_in_database.ipynb
   # ... hier
   page-footer: |
     &copy; HAS green academy
