@@ -59,7 +59,7 @@ book:
       - text: "PostGIS database"
         file: Maken_van_database.ipynb
       - text: "Laden van database"
-        file: Laden_van_gegevens_in_database.ipynb
+        file: Laden_van_gegevens_in_database_met_Python.ipynb
   # ... hier
   page-footer: |
     &copy; HAS green academy
