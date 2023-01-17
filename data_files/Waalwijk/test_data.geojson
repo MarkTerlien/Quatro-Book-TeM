@@ -1,0 +1,28 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32631" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1, "landuse": "water", "landuse_id": 1 }, "geometry": { "type": "Point", "coordinates": [ 656191.182572334655561, 5724595.622384967282414 ] } },
+{ "type": "Feature", "properties": { "id": 11, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 651931.960997158661485, 5724215.358344382606447 ] } },
+{ "type": "Feature", "properties": { "id": 14, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 651231.389621713897213, 5727848.988255182281137 ] } },
+{ "type": "Feature", "properties": { "id": 15, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 649967.151761735556647, 5727899.760399837978184 ] } },
+{ "type": "Feature", "properties": { "id": 16, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 649111.724885916919447, 5727745.061630901880562 ] } },
+{ "type": "Feature", "properties": { "id": 19, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 652298.310208230977878, 5727778.954181454144418 ] } },
+{ "type": "Feature", "properties": { "id": 22, "landuse": "buildings", "landuse_id": 3 }, "geometry": { "type": "Point", "coordinates": [ 654466.890872768126428, 5725727.033721323125064 ] } },
+{ "type": "Feature", "properties": { "id": 25, "landuse": "buildings", "landuse_id": 3 }, "geometry": { "type": "Point", "coordinates": [ 650847.18606468255166, 5728827.95091590564698 ] } },
+{ "type": "Feature", "properties": { "id": 36, "landuse": "sand", "landuse_id": 4 }, "geometry": { "type": "Point", "coordinates": [ 646024.574115467723459, 5723507.62796048168093 ] } },
+{ "type": "Feature", "properties": { "id": 39, "landuse": "sand", "landuse_id": 4 }, "geometry": { "type": "Point", "coordinates": [ 648643.782797808758914, 5724395.580590517260134 ] } },
+{ "type": "Feature", "properties": { "id": 42, "landuse": "forest", "landuse_id": 5 }, "geometry": { "type": "Point", "coordinates": [ 645166.58856989571359, 5725151.442886062897742 ] } },
+{ "type": "Feature", "properties": { "id": 43, "landuse": "forest", "landuse_id": 5 }, "geometry": { "type": "Point", "coordinates": [ 645210.753123212605715, 5724090.089682989753783 ] } },
+{ "type": "Feature", "properties": { "id": 45, "landuse": "forest", "landuse_id": 5 }, "geometry": { "type": "Point", "coordinates": [ 647798.906673442805186, 5724573.878859642893076 ] } },
+{ "type": "Feature", "properties": { "id": 50, "landuse": "forest", "landuse_id": 5 }, "geometry": { "type": "Point", "coordinates": [ 649601.892613290343434, 5726190.097451129928231 ] } },
+{ "type": "Feature", "properties": { "id": 52, "landuse": "forest", "landuse_id": 5 }, "geometry": { "type": "Point", "coordinates": [ 651735.123134967754595, 5724728.049299156293273 ] } },
+{ "type": "Feature", "properties": { "id": 54, "landuse": "sand", "landuse_id": 4 }, "geometry": { "type": "Point", "coordinates": [ 652338.43065542425029, 5725105.542080657556653 ] } },
+{ "type": "Feature", "properties": { "id": 55, "landuse": "buildings", "landuse_id": 3 }, "geometry": { "type": "Point", "coordinates": [ 653368.692901159520261, 5725587.986901368945837 ] } },
+{ "type": "Feature", "properties": { "id": 60, "landuse": "grasland", "landuse_id": 6 }, "geometry": { "type": "Point", "coordinates": [ 650731.080671282601543, 5727245.947886157780886 ] } },
+{ "type": "Feature", "properties": { "id": 63, "landuse": "grasland", "landuse_id": 6 }, "geometry": { "type": "Point", "coordinates": [ 647719.282620958634652, 5727061.581162663176656 ] } },
+{ "type": "Feature", "properties": { "id": 64, "landuse": "grasland", "landuse_id": 6 }, "geometry": { "type": "Point", "coordinates": [ 646588.558531966176815, 5726742.646545089781284 ] } },
+{ "type": "Feature", "properties": { "id": 67, "landuse": "grasland", "landuse_id": 6 }, "geometry": { "type": "Point", "coordinates": [ 645441.256704859202728, 5726876.275890074670315 ] } },
+{ "type": "Feature", "properties": { "id": 74, "landuse": "cropland", "landuse_id": 2 }, "geometry": { "type": "Point", "coordinates": [ 652004.683241704595275, 5726380.192044699564576 ] } }
+]
+}
