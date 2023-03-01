@@ -3,6 +3,7 @@
 "name": "sample_points",
 "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32631" } },
 "features": [
+{ "type": "Feature", "properties": { "id": 75, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 644627.941212406614795, 5724496.998181082308292 ] } },
 { "type": "Feature", "properties": { "id": 1, "landuse": "water" }, "geometry": { "type": "Point", "coordinates": [ 656191.182572334655561, 5724595.622384967282414 ] } },
 { "type": "Feature", "properties": { "id": 2, "landuse": "water" }, "geometry": { "type": "Point", "coordinates": [ 655161.656370183220133, 5724645.648061143234372 ] } },
 { "type": "Feature", "properties": { "id": 3, "landuse": "water" }, "geometry": { "type": "Point", "coordinates": [ 656020.783726287772879, 5724804.957339781336486 ] } },
@@ -76,6 +77,15 @@
 { "type": "Feature", "properties": { "id": 71, "landuse": "grasland" }, "geometry": { "type": "Point", "coordinates": [ 654210.789824731415138, 5727808.951282121241093 ] } },
 { "type": "Feature", "properties": { "id": 72, "landuse": "water" }, "geometry": { "type": "Point", "coordinates": [ 650405.205741543439217, 5724033.416939799673855 ] } },
 { "type": "Feature", "properties": { "id": 73, "landuse": "cropland" }, "geometry": { "type": "Point", "coordinates": [ 648907.107752746902406, 5725613.662267200648785 ] } },
-{ "type": "Feature", "properties": { "id": 74, "landuse": "cropland" }, "geometry": { "type": "Point", "coordinates": [ 652004.683241704595275, 5726380.192044699564576 ] } }
+{ "type": "Feature", "properties": { "id": 74, "landuse": "cropland" }, "geometry": { "type": "Point", "coordinates": [ 652004.683241704595275, 5726380.192044699564576 ] } },
+{ "type": "Feature", "properties": { "id": 76, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 645287.088745877495967, 5723068.192364580929279 ] } },
+{ "type": "Feature", "properties": { "id": 77, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 645854.374273523455486, 5724360.257742527872324 ] } },
+{ "type": "Feature", "properties": { "id": 78, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 646318.949658029247075, 5724060.324635074473917 ] } },
+{ "type": "Feature", "properties": { "id": 79, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 646338.581381733645685, 5723795.196855437010527 ] } },
+{ "type": "Feature", "properties": { "id": 80, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 646936.121179954032414, 5724093.564485951326787 ] } },
+{ "type": "Feature", "properties": { "id": 81, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 647291.889787804801017, 5723487.347227014601231 ] } },
+{ "type": "Feature", "properties": { "id": 82, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 648318.843294063466601, 5723875.080492313019931 ] } },
+{ "type": "Feature", "properties": { "id": 83, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 648420.110451009590179, 5724322.583603345789015 ] } },
+{ "type": "Feature", "properties": { "id": null, "landuse": "shrubs" }, "geometry": { "type": "Point", "coordinates": [ 657055.304741743020713, 5725486.306596276350319 ] } }
 ]
 }
