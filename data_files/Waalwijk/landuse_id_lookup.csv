@@ -1,7 +1,8 @@
 ,landuse,landuse_id
-0,water,1
-1,cropland,2
-2,buildings,3
-3,sand,4
-4,forest,5
-5,grasland,6
+0,shrubs,1
+1,water,2
+2,cropland,3
+3,buildings,4
+4,sand,5
+5,forest,6
+6,grass,7
