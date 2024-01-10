@@ -24,10 +24,12 @@ else :
 features = r.json()["features"]
 for feature in features:
     download_url = feature["properties"]["url"]
-    print(download_url)
-    my_ahnfile = requests.get(url)
-    open('c:/temp/' + feature["properties"]["name"], 'wb').write(my_ahnfile.content)
-    sys.exit(0)
+    if feature["properties"]["name"] == 'M_02DZ1.tif':
+        print('Downloading ' + download_url)
+        my_ahnfile = requests.get(download_url)
+        output_file = 'c:/temp/' + feature["properties"]["name"]
+        open(output_file, 'wb').write(my_ahnfile.content)
+        print('Downloading to file ' + output_file  + 'completed')
 
 # Instructions to download file: https://realpython.com/python-download-file-from-url/
 
